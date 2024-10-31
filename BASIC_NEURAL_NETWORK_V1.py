@@ -71,7 +71,7 @@ y_train = torch.FloatTensor(y_train)
 y_test = torch.FloatTensor(y_test)
 
 #MEASURE ERROR
-criterion = nn.CrossEntropyLoss()
+criterion =  nn.MSELoss()
 #CHOOSE ADAM OPTIMIZER
 optimizer = torch.optim.Adam(basic_model.parameters(), lr=0.0001)
 
