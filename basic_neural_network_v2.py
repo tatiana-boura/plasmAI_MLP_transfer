@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from numpy.ma.core import outer
 from torch.utils.data import DataLoader
-
+import time
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -54,12 +55,13 @@ class Model(nn.Module):
         return x
 #=========================================================
 # Define a generic training loop function
-def train_regression_model(model, train_loader, criterion, optimizer, num_epochs, device):
+def train_regression_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device):
     # Move model to the specified device
     model.to(device)
 
     # To track the history of training losses
     train_losses = []
+    val_losses = []
 
     for epoch in range(num_epochs):
         model.train()  # Make model into training mode
@@ -82,13 +84,39 @@ def train_regression_model(model, train_loader, criterion, optimizer, num_epochs
         train_loss /= len(train_loader.dataset)
         train_losses.append(train_loss)
 
+        #Validation step===============================================
+        model.eval() #turn into evaluation mode
+        val_loss = 0
+
+        with torch.no_grad(): #disable gradient calc
+            for inputs, targets in val_loader:
+                inputs, targets = inputs.to(device), targets.to(device)
+                outputsv = model(inputs)        #v from validation
+                lossv = criterion(outputsv, targets)
+                val_loss += lossv.item() * inputs.size(0)
+        val_loss /= len(val_loader.dataset)
+        val_losses.append(val_loss)
+        # ===============================================
         if epoch % 10 == 0 or epoch == num_epochs-1:
-            print(f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {train_loss:.4f}")
+            print(f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
 
-    return model, train_losses
+    return model, train_losses, val_losses
+def test_model(model, test_loader, criterion, device):
+    model.eval()
+    test_loss = 0
+    with torch.no_grad():
+        for inputs, targets in test_loader:
+            inputs, targets = inputs.to(device), targets.to(device)
+            outputst = model(inputs)
+            losst = criterion(outputst, targets)
+            test_loss += losst.item() * inputs.size(0)
+    test_loss /= len(test_loader.dataset)
+    return test_loss
 
+
+start_time = time.time()
 #===========================================================
-dataset =  MergedDataset() #****** added 4/11
+dataset =  MergedDataset() #******
 # Set the sizes for training, validation, and  testing
 train_size = int(0.6 * len(dataset))  # 60% for training
 val_size = int(0.2 * len(dataset))    # 20% for validation
@@ -106,28 +134,39 @@ test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 #===============================================================
 # create an instance for the model
 basic_model = Model()
-
-# Use the classes you created to make your Dataset and Data
-#****
-#dataloader = DataLoader(dataset=train_dataset, batch_size=4, shuffle=True)
-
-# MEASURE LOSS
 criterion = nn.MSELoss()
 # CHOOSE ADAM OPTIMIZER
 optimizer = torch.optim.Adam(basic_model.parameters(), lr=0.001)
-epochs = 100
+epochs = 250
 
-trained_model, losses = train_regression_model(model=basic_model,
+trained_model, losses, val_losses = train_regression_model(model=basic_model,
                                                train_loader=train_loader,
+                                               val_loader=val_loader,
                                                criterion=criterion,
                                                optimizer=optimizer,
                                                num_epochs=epochs,
                                                device=device)
 #===========================================================
-# Plot Training loss at each Epoch
+
+#Evaluate on the test set
+test_loss = test_model(model=trained_model,
+                       test_loader=test_loader,
+                       criterion=criterion,
+                       device=device)
+print(f"mean test loss: {test_loss:.4f}")
+#===========================================================
+end_time = time.time()
+print("The time of execution of above program is :", (end_time-start_time), "s")
+# Plot Training loss and validation loss at each Epoch
 plt.plot(list(range(epochs)), losses, label="Training Loss")
+plt.plot(list(range(epochs)), val_losses, label="Validation Loss")
 plt.ylabel("Loss")
 plt.xlabel("Epoch")
-plt.title("Training Loss Progression")
+plt.title("Training & Validation Loss Progression")
 plt.legend()
 plt.show()
+
+#save the model to dictionary
+model_save_path = 'trained_model1.pth'
+torch.save(trained_model.state_dict(), model_save_path)
+print(f"model saved to {model_save_path}")
