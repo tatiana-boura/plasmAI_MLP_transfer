@@ -137,7 +137,7 @@ basic_model = Model()
 criterion = nn.MSELoss()
 # CHOOSE ADAM OPTIMIZER
 optimizer = torch.optim.Adam(basic_model.parameters(), lr=0.001)
-epochs = 250
+epochs = 100
 
 trained_model, losses, val_losses = train_regression_model(model=basic_model,
                                                train_loader=train_loader,
