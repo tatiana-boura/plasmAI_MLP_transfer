@@ -6,7 +6,7 @@ import pandas as pd
 
 class MergedDataset(Dataset):
     def __init__(self):
-        df = pd.read_csv('merged_1-2116.csv', sep=';')
+        df = pd.read_csv('merged_data_1-8719.csv', sep=';')
         # normalize the data with min-max
         '''for column in df.columns:
             df[column] = (df[column] - df[column].min()) / ( df[column].max() - df[column].min())'''

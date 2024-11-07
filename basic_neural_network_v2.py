@@ -160,10 +160,11 @@ print("The time of execution of above program is :", (end_time-start_time), "s")
 # Plot Training loss and validation loss at each Epoch
 plt.plot(list(range(epochs)), losses, label="Training Loss")
 plt.plot(list(range(epochs)), val_losses, label="Validation Loss")
-plt.ylabel("Loss")
+plt.ylabel("Total Cost")
 plt.xlabel("Epoch")
 plt.title("Training & Validation Loss Progression")
 plt.legend()
+plt.rcParams.update({'font.size': 22})
 plt.show()
 
 #save the model to dictionary
