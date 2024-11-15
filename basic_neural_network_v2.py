@@ -8,6 +8,8 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from dataset_class_V2 import MergedDataset
+import json
+import pandas as pd
 
 from torch.utils.data import random_split
 #=======================================================
@@ -55,19 +57,21 @@ class Model(nn.Module):
         return x
 #=========================================================
 # Define a generic training loop function
-def train_regression_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device):
+def train_regression_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device, patience):
     # Move model to the specified device
     model.to(device)
 
     # To track the history of training losses
     train_losses = []
     val_losses = []
+    best_val_loss = float("inf")
+    early_counter = 0  # early-stopping counter
 
     for epoch in range(num_epochs):
         model.train()  # Make model into training mode
         train_loss = 0
 
-        # YOU HAVE TO USE THE DATALOADER TO PERFORM BATCH TRAINING!!!
+
         for inputs, targets in train_loader:
             inputs, targets = inputs.to(device), targets.to(device)
 
@@ -99,8 +103,20 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
         # ===============================================
         if epoch % 10 == 0 or epoch == num_epochs-1:
             print(f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+        #Early stopping implementation
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            early_counter = 0 #reset the counter if validation loss improves
+            best_model_state = model.state_dict()
+        else:
+            early_counter += 1
+            if early_counter >= patience:
+                print(f"Early stopping triggered at {epoch + 1} epoch")
+                model.load_state_dict(best_model_state)
+                break
 
     return model, train_losses, val_losses
+
 def test_model(model, test_loader, criterion, device):
     model.eval()
     test_loss = 0
@@ -116,28 +132,29 @@ def test_model(model, test_loader, criterion, device):
 
 start_time = time.time()
 #===========================================================
-dataset =  MergedDataset() #******
+dataset =  MergedDataset('train_data_no_head_outer_corner.csv')
+dataset_test = MergedDataset('test_data_no_head_outer_corner.csv')
 # Set the sizes for training, validation, and  testing
-train_size = int(0.6 * len(dataset))  # 60% for training
-val_size = int(0.2 * len(dataset))    # 20% for validation
-test_size = len(dataset) - train_size - val_size  # Remaining 20% for testing
+train_size = int(0.8 * len(dataset))  # 80% for training
+val_size = len(dataset) - train_size    # 20% for validation
+#test_size = len(dataset) - train_size - val_size  # Remaining 20% for testing
 
 # Split the dataset
 
-train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
+train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
 # Create DataLoaders for each subset
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=32, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
+test_loader = DataLoader(dataset_test, batch_size=16, shuffle=False)
 #******
 #===============================================================
 # create an instance for the model
 basic_model = Model()
 criterion = nn.MSELoss()
-# CHOOSE ADAM OPTIMIZER
-optimizer = torch.optim.Adam(basic_model.parameters(), lr=0.001)
-epochs = 100
+# CHOOSE ADAM OPTIMIZER with a decay parameter [L2 Regularization method]
+optimizer = torch.optim.Adam(basic_model.parameters(), lr=0.001, weight_decay=1e-4)
+epochs = 10
 
 trained_model, losses, val_losses = train_regression_model(model=basic_model,
                                                train_loader=train_loader,
@@ -145,11 +162,12 @@ trained_model, losses, val_losses = train_regression_model(model=basic_model,
                                                criterion=criterion,
                                                optimizer=optimizer,
                                                num_epochs=epochs,
-                                               device=device)
+                                               device=device,
+                                                patience=10)
 #===========================================================
 
 #Evaluate on the test set
-test_loss = test_model(model=trained_model,
+test_loss, results_df = test_model(model=trained_model,
                        test_loader=test_loader,
                        criterion=criterion,
                        device=device)

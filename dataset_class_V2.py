@@ -5,8 +5,8 @@ import pandas as pd
 
 
 class MergedDataset(Dataset):
-    def __init__(self):
-        df = pd.read_csv('merged_data_1-8719.csv', sep=';')
+    def __init__(self, csv_file):
+        df = pd.read_csv(csv_file, sep=';')
         # normalize the data with min-max
         '''for column in df.columns:
             df[column] = (df[column] - df[column].min()) / ( df[column].max() - df[column].min())'''
@@ -54,3 +54,20 @@ class MergedDataset(Dataset):
             print(f"average value: {mean_value}")
             print(f"std: {std_value}")
             print("-" * 30)  # print a line -----------
+
+class testdataset_unormalized(Dataset):
+    def __init__(self):
+        df = pd.read_csv('train_data_no_head_outer_corner.csv', sep=';')
+        X_columns = ['Power', 'Pressure']  # features
+        y_columns = [col for col in df.columns if col not in X_columns]  # To be predicted
+        self.X, self.y = df[X_columns], df[y_columns]
+
+        self.df = df
+
+    def __getitem__(self, index):
+        X = self.X.iloc[index, :].values
+        y = self.y.iloc[index, :].values
+        return torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
+
+    def __len__(self):
+        return self.X.shape[0]
