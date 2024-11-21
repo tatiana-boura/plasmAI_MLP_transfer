@@ -264,8 +264,6 @@ plt.xlabel('Column Pair Index', fontsize=22)
 plt.ylabel('R^2 Score', fontsize=22)
 plt.title('R^2 Scores for Each Column Pair (Prediction vs Target)', fontsize=22)
 
-# Optional: Add horizontal line at R^2 = 0.9 for reference
-#plt.axhline(y=0.9, color='r', linestyle='--', label='R^2 = 0.9')
 
 # Display the plot
 plt.xticks(range(1, len(r2_scores) + 1))  # Set x-ticks for each column pair
