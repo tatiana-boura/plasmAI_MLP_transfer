@@ -67,7 +67,7 @@ end
 % disp(r2_scores);
 
 % Visualize the R^2 scores using a bar chart
-figure; 
+figure(2); 
 bar(r2_scores, 'FaceColor', [0.6, 0.8, 1], 'EdgeColor', 'black');
 xlabel('Column Pair Index', 'FontSize', 12);
 ylabel('R^2 Score', 'FontSize', 12);
@@ -75,11 +75,12 @@ title('R^2 Scores for Each Column Pair (Prediction vs Target)', 'FontSize', 14);
 grid on;
 
 % Visualize the MSE scores using a bar chart
-scaled_mse = ((mse_scores)-min(mse_scores))./(max(mse_scores)-min(mse_scores));
-subplot(1, 2, 2);
-bar(scaled_mse, 'FaceColor', [1, 0.6, 0.6], 'EdgeColor', 'black');
-xlabel('Column Pair Index', 'FontSize', 12);
-ylabel('MSE', 'FontSize', 12);
-title('MSE for Each Column Pair (Prediction vs Target)', 'FontSize', 14);
-grid on;
+% figure(2)
+% scaled_mse = ((mse_scores)-min(mse_scores))./(max(mse_scores)-min(mse_scores));
+% subplot(1, 2, 2);
+% bar(scaled_mse, 'FaceColor', [1, 0.6, 0.6], 'EdgeColor', 'black');
+% xlabel('Column Pair Index', 'FontSize', 12);
+% ylabel('MSE', 'FontSize', 12);
+% title('MSE for Each Column Pair (Prediction vs Target)', 'FontSize', 14);
+% grid on;
 

@@ -167,7 +167,7 @@ criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(basic_model.parameters(), lr=0.001, weight_decay=1e-4)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.1, verbose=True)
 
-epochs = 250
+epochs = 80
 
 trained_model, losses, val_losses = train_regression_model(model=basic_model,
                                                train_loader=train_loader,
@@ -189,6 +189,9 @@ print(f"mean test loss: {test_loss:.4f}")
 print(type(all_targets))
 print(all_predictions.shape)
 print(all_targets.shape)
+
+predictions_dfcsv = pd.DataFrame(all_predictions)
+predictions_dfcsv.to_csv('predictions_all.csv', index=False, sep=';')
 
 #test results
  #Convert 2D arrays into a DataFrame with separate columns for each feature
@@ -236,7 +239,7 @@ plt.show()
 
 #save the model to dictionary
 model_save_path = 'trained_model1.pth'
-torch.save(trained_model.state_dict(), model_save_path)
+#torch.save(trained_model.state_dict(), model_save_path)
 print(f"model saved to {model_save_path}")
 
 # now read the csv's and compute r2 score
