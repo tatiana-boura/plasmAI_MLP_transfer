@@ -3,17 +3,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import random
 import numpy as np
-import json
-from torch.utils.data import DataLoader, random_split
-from sklearn.metrics import r2_score
-import pandas as pd
-import matplotlib.pyplot as plt
+
 
 # Device setup (CUDA or CPU)
 def setup_device():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f'Device is {device}.')
     return device
+
 
 # Set seed for reproducibility
 def set_seed(seed):
@@ -25,6 +22,7 @@ def set_seed(seed):
         torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
 
 def train_regression_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device, patience, scheduler=None):
     # Move model to the specified device
@@ -40,7 +38,6 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
     for epoch in range(num_epochs):
         model.train()  # Make model into training mode
         train_loss = 0
-
 
         for inputs, targets in train_loader:
             inputs, targets = inputs.to(device), targets.to(device)
@@ -80,8 +77,8 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                 current_lr = optimizer.param_groups[0]['lr']  # Fallback if no scheduler is provided
         # ===============================================
         if epoch % 10 == 0 or epoch == num_epochs-1:
-            print(f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} |f Learning Rate: {current_lr:.4e}" )
-        #Early stopping implementation
+            print(f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Learning Rate: {current_lr:.4e}" )
+        # Early stopping implementation
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             early_counter = 0 #reset the counter if validation loss improves
@@ -94,6 +91,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                 break
 
     return model, train_losses, val_losses
+
 
 def test_model(model, test_loader, criterion, device):
     model.eval()
@@ -113,7 +111,6 @@ def test_model(model, test_loader, criterion, device):
     return test_loss, all_predictions, all_targets
 
 
-
 class Model(nn.Module):
     # input layer ( 2 features, Power Pressure) --> Hidden Layer 1 (H1) --> H2 --> Output (25 outputs)
     def __init__(self, in_features=2, h1=10, h2=10, out_features=10):
@@ -129,6 +126,7 @@ class Model(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.out(x)
         return x
+
 
 def unscale(data, column_names, scaling_info):
     unscaled_data = data.copy()
