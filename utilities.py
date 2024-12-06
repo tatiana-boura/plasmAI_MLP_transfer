@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import random
 import numpy as np
-import time
 import json
 from torch.utils.data import DataLoader, random_split
 from sklearn.metrics import r2_score

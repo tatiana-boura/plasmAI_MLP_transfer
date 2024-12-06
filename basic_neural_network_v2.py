@@ -14,6 +14,7 @@ import pandas as pd
 from sklearn.metrics import r2_score, mean_squared_error
 from utilities import setup_device, set_seed, train_regression_model, test_model, Model, unscale
 from torch.utils.data import random_split
+import optuna
 #=======================================================
 device = setup_device()
 #=======================================================
