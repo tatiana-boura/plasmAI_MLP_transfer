@@ -76,13 +76,12 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
             scheduler.step(val_loss)
             # Adjust learning rate with ReduceLROnPlateau
             if scheduler:
-                scheduler.step(val_loss)
-
-            # Get the current learning rate (assuming the first parameter group)
-            current_lr = optimizer.param_groups[0]['lr']
+                current_lr = scheduler.get_last_lr()[0]  # Get the learning rate of the first group
+            else:
+                current_lr = optimizer.param_groups[0]['lr']  # Fallback if no scheduler is provided
         # ===============================================
         if epoch % 10 == 0 or epoch == num_epochs-1:
-            print(f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} |f Learning Rate: {current_lr:.6f}" )
+            print(f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} |f Learning Rate: {current_lr:.4e}" )
         #Early stopping implementation
         if val_loss < best_val_loss:
             best_val_loss = val_loss
