@@ -41,9 +41,9 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
 
         for inputs, targets in train_loader:
             inputs, targets = inputs.to(device), targets.to(device)
-
             optimizer.zero_grad()
             outputs = model(inputs)
+            assert outputs.shape == targets.shape, f"Output shape {outputs.shape} doesn't match target shape {targets.shape}"
             loss = criterion(outputs, targets)
 
             train_loss += loss.item() * inputs.size(0) # x batch_size to account for the loss that is the avg per batch
@@ -55,7 +55,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
         train_loss /= len(train_loader.dataset)
         train_losses.append(train_loss)
 
-        #Validation step===============================================
+        #Validation step
         model.eval() #turn into evaluation mode
         val_loss = 0
 
@@ -67,15 +67,14 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                 val_loss += lossv.item() * inputs.size(0)
         val_loss /= len(val_loader.dataset)
         val_losses.append(val_loss)
+
         # Adjust learning rate with ReduceLROnPlateau
         if scheduler:
             scheduler.step(val_loss)
-            # Adjust learning rate with ReduceLROnPlateau
-            if scheduler:
-                current_lr = scheduler.get_last_lr()[0]  # Get the learning rate of the first group
-            else:
-                current_lr = optimizer.param_groups[0]['lr']  # Fallback if no scheduler is provided
-        # ===============================================
+            current_lr = scheduler.get_last_lr()[0]  # Get the learning rate of the first group
+        else:
+            current_lr = optimizer.param_groups[0]['lr']  # Fallback if no scheduler is provided
+
         if epoch % 10 == 0 or epoch == num_epochs-1:
             print(f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Learning Rate: {current_lr:.4e}" )
         # Early stopping implementation
@@ -139,3 +138,28 @@ def unscale(data, column_names, scaling_info):
         std = scaling_info[column]['std']
         unscaled_data[:, i] = (data[:, i] * std) + mean  # Reverse normalization
     return unscaled_data
+
+
+def calculate_weighted_mse(predicted_values, true_values):
+    # Ensure that the inputs are numpy arrays
+    true_values = true_values.clone().detach() #(true_values, dtype=torch.float32)
+    predicted_values = predicted_values.clone().detach().requires_grad_(True)
+
+
+
+    weights_tensor = torch.tensor([
+        0.093312122, 0.102769082, 0.105229524, 0.118937088, 0.13627972,
+        0.144720322, 0.153479654, 0.107621811, 0.035236323, 0.002414354
+    ], dtype=torch.float32)
+
+    # Compute the squared differences (error) for each column
+    squared_diffs = (true_values - predicted_values) ** 2
+
+    # Apply the weights to each column's squared error
+    weighted_squared_diffs = squared_diffs * weights_tensor
+
+    # Calculate the mean of the weighted squared differences (weighted MSE)
+    weighted_mse = weighted_squared_diffs.mean()
+
+    return weighted_mse
+

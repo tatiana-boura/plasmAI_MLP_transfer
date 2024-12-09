@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
-from utilities import setup_device, set_seed, train_regression_model, test_model, Model, unscale
+from utilities import setup_device, set_seed, train_regression_model, test_model, Model, unscale, calculate_weighted_mse
 from torch.utils.data import random_split
 
 device = setup_device()
@@ -35,12 +35,12 @@ test_loader = DataLoader(dataset_test, batch_size=16, shuffle=False)
 
 # create an instance for the model
 basic_model = Model()
-criterion = nn.MSELoss()
+criterion = calculate_weighted_mse
 # CHOOSE ADAM OPTIMIZER with a decay parameter [L2 Regularization method]
 optimizer = torch.optim.Adam(basic_model.parameters(), lr=0.001, weight_decay=1e-4)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.1)
 
-epochs = 600
+epochs = 20
 
 trained_model, losses, val_losses = train_regression_model(model=basic_model,
                                                            train_loader=train_loader,
@@ -70,7 +70,7 @@ plt.show()
 
 basic_model.load_state_dict(torch.load('trained_model1.pth'))
 trained_model = basic_model
-
+criterion = calculate_weighted_mse
 # Evaluate on the test set
 test_loss, all_predictions, all_targets = test_model(model=trained_model,
                                                      test_loader=test_loader,
