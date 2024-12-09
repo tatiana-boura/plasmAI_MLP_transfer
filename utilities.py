@@ -147,19 +147,31 @@ def calculate_weighted_mse(predicted_values, true_values):
 
 
 
-    weights_tensor = torch.tensor([
-        0.093312122, 0.102769082, 0.105229524, 0.118937088, 0.13627972,
-        0.144720322, 0.153479654, 0.107621811, 0.035236323, 0.002414354
-    ], dtype=torch.float32)
+    # weights_tensor = torch.tensor([
+    #     0.093312122, 0.102769082, 0.105229524, 0.118937088, 0.13627972,
+    #     0.144720322, 0.153479654, 0.107621811, 0.035236323, 0.002414354
+    # ], dtype=torch.float32)
 
     # Compute the squared differences (error) for each column
     squared_diffs = (true_values - predicted_values) ** 2
 
     # Apply the weights to each column's squared error
-    weighted_squared_diffs = squared_diffs * weights_tensor
+    weighted_squared_diffs = squared_diffs  #* weights_tensor
 
     # Calculate the mean of the weighted squared differences (weighted MSE)
     weighted_mse = weighted_squared_diffs.mean()
 
     return weighted_mse
 
+
+def calculate_huber_loss(predicted_values, true_values, delta=1.0):
+    true_values = true_values.clone().detach()  # (true_values, dtype=torch.float32)
+    predicted_values = predicted_values.clone().detach().requires_grad_(True)
+    diff = torch.abs(predicted_values - true_values)
+
+    # Compute the Huber loss
+    loss = torch.where(diff < delta,
+                       0.5 * diff ** 2,  # If difference is less than delta, use squared loss
+                       delta * (diff - 0.5 * delta))  # Otherwise, use linear loss
+    loss[:, :5] *= 4
+    return loss.mean()
