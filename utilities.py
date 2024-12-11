@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import random
 import numpy as np
-
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 # Device setup (CUDA or CPU)
 def setup_device():
@@ -24,7 +24,7 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
 
 
-def train_regression_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device, patience, scheduler=None):
+def train_regression_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device, patience, scheduler):
     # Move model to the specified device
     model.to(device)
 
@@ -34,6 +34,8 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
     best_val_loss = float("inf")
     early_counter = 0  # early-stopping counter
     best_model_state = None
+    # mae_scores = []
+    # mse_scores = []
 
     for epoch in range(num_epochs):
         model.train()  # Make model into training mode
@@ -58,6 +60,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
         #Validation step
         model.eval() #turn into evaluation mode
         val_loss = 0
+        r2_values = []
 
         with torch.no_grad(): #disable gradient calc
             for inputs, targets in val_loader:
@@ -65,6 +68,21 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                 outputsv = model(inputs)        #v from validation
                 lossv = criterion(outputsv, targets)
                 val_loss += lossv.item() * inputs.size(0)
+
+                #r^2 calculation
+                for col in range(outputsv.shape[1]):
+                    pred_col = outputsv[:, col].cpu().numpy()  # Get predictions for the current column
+                    target_col = targets[:, col].cpu().numpy()  # Get targets for the current column
+
+                    # Calculate the residual sum of squares (RSS) and total sum of squares (TSS)
+                    rss = ((target_col - pred_col) ** 2).sum()  # Residual Sum of Squares
+                    tss = ((target_col - target_col.mean()) ** 2).sum()  # Total Sum of Squares
+                    # Calculate R^2 using the formula
+                    r2 = 1 - (rss / tss)
+                    r2_values.append(r2)
+
+
+
         val_loss /= len(val_loader.dataset)
         val_losses.append(val_loss)
 
@@ -77,6 +95,8 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
 
         if epoch % 10 == 0 or epoch == num_epochs-1:
             print(f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Learning Rate: {current_lr:.4e}" )
+            for col in range(outputs.shape[1]):
+                print(f"  R^2 for column {col + 1}: {r2_values[col]:.4f}")
         # Early stopping implementation
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -121,8 +141,8 @@ class Model(nn.Module):
     # we need now the function to move everything forward
     def forward(self, x):
         # we choose relu
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = F.elu(self.fc1(x))
+        x = F.elu(self.fc2(x))
         x = self.out(x)
         return x
 
@@ -173,5 +193,5 @@ def calculate_huber_loss(predicted_values, true_values, delta=1.0):
     loss = torch.where(diff < delta,
                        0.5 * diff ** 2,  # If difference is less than delta, use squared loss
                        delta * (diff - 0.5 * delta))  # Otherwise, use linear loss
-    loss[:, :5] *= 4
+    loss[:, :6] *= 4
     return loss.mean()
