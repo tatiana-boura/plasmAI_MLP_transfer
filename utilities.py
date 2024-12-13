@@ -35,8 +35,8 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
     early_counter = 0  # early-stopping counter
     best_model_state = None
     # mae_scores = []
-    # mse_scores = []
-
+    mse_values = []
+    best_r2 = -0.0001
     for epoch in range(num_epochs):
         model.train()  # Make model into training mode
         train_loss = 0
@@ -80,13 +80,15 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                     # Calculate R^2 using the formula
                     r2 = 1 - (rss / tss)
                     r2_values.append(r2)
-
-
+                    # Calculate MSE for the current column
+                    mse = ((target_col - pred_col) ** 2).mean()
+                    mse_values.append(mse)
 
         val_loss /= len(val_loader.dataset)
         val_losses.append(val_loss)
-
+        mean_r2 = sum(r2_values) / len(r2_values)
         # Adjust learning rate with ReduceLROnPlateau
+        mean_mse = sum(mse_values) / len(mse_values)  # Calculate mean MSE for all columns
         if scheduler:
             scheduler.step(val_loss)
             current_lr = scheduler.get_last_lr()[0]  # Get the learning rate of the first group
@@ -97,6 +99,14 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
             print(f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Learning Rate: {current_lr:.4e}" )
             for col in range(outputs.shape[1]):
                 print(f"  R^2 for column {col + 1}: {r2_values[col]:.4f}")
+            for col in range(outputs.shape[1]):
+                print(f"  MSE for column {col + 1}: {mse_values[col]:.4f}")
+            print(f"  Mean MSE for all columns: {mean_mse:.4f}")
+        #save the model if mean R^2 improves
+        # if mean_r2 > best_r2:
+        #     best_r2 = mean_r2
+        #     best_model_state = model.state_dict()
+
         # Early stopping implementation
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -195,3 +205,26 @@ def calculate_huber_loss(predicted_values, true_values, delta=1.0):
                        delta * (diff - 0.5 * delta))  # Otherwise, use linear loss
     loss[:, :6] *= 4
     return loss.mean()
+
+
+class Model_dynamic(nn.Module):
+    def __init__(self, h1, num_layers):
+        super().__init__()
+        self.num_layers = num_layers
+        self.layers = nn.ModuleList()  # List to hold layers
+
+        # First layer
+        self.layers.append(nn.Linear(2, h1))
+
+        # Add hidden layers
+        for _ in range(num_layers - 1):
+            self.layers.append(nn.Linear(h1, h1))  # Each hidden layer has h1 neurons
+
+        # Output layer
+        self.out = nn.Linear(h1, 10)
+
+    def forward(self, x):
+        for i in range(self.num_layers):
+            x = F.elu(self.layers[i](x))  # Apply ELU after each layer
+        x = self.out(x)  # Output layer
+        return x
