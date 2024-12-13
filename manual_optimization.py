@@ -5,7 +5,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from dataset_class_V2 import MergedDataset
-from utilities import setup_device, set_seed, train_regression_model, test_model, Model, unscale
+from utilities import setup_device, set_seed, train_regression_model, Model_dynamic
 from torch.utils.data import random_split
 
 device = setup_device()
@@ -36,23 +36,25 @@ best_val_loss = -1e-6
 best_params = None
 test_loader = DataLoader(dataset_test, batch_size=16, shuffle=False)
 
-for lr in learning_rates:
-    for batch_size in batch_sizes:
-        for weight_decay in weight_decays:
-            print(f"Training with LR={lr}, Batch Size={batch_size}, weight decay={weight_decay}")
+for h1 in h1_values:
+    for num_layers in num_layers_values:
+        for lr in learning_rates:
+            for batch_size in batch_sizes:
+                for weight_decay in weight_decays:
+                    print(f"Training with LR={lr}, Batch Size={batch_size}, weight decay={weight_decay}")
 
-            train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-            val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
-            # Create an instance for the model
-            basic_model = Model()
-            criterion = nn.SmoothL1Loss()
-            # Use Adam optimizer with L2 regularization (weight decay)
-            optimizer = torch.optim.Adam(basic_model.parameters(), lr=lr, weight_decay=weight_decay)
-            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.1)
+                    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+                    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+                    # Create an instance for the model
+                    basic_model = Model_dynamic(h1=h1, num_layers=num_layers)
+                    criterion = nn.SmoothL1Loss()
+                    # Use Adam optimizer with L2 regularization (weight decay)
+                    optimizer = torch.optim.Adam(basic_model.parameters(), lr=lr, weight_decay=weight_decay)
+                    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.1)
 
-            epochs = 600
+                    epochs = 600
 
-            trained_model, losses, val_losses = train_regression_model(model=basic_model,
+                    trained_model, losses, val_losses = train_regression_model(model=basic_model,
                                                                        train_loader=train_loader,
                                                                        val_loader=val_loader,
                                                                        criterion=criterion,
@@ -60,13 +62,16 @@ for lr in learning_rates:
                                                                        num_epochs=epochs,
                                                                        device=device,
                                                                        patience=5,
-                                                                       scheduler=scheduler)
-            final_val_loss = val_losses[-1]
-            print(f"Validation Loss: {final_val_loss:.4f}")
-            if final_val_loss < best_val_loss:
-                best_val_loss = final_val_loss
-                best_params = {'lr': lr, 'batch_size': batch_size, 'weight_decay': weight_decay}
-                best_model = trained_model  # Save the best model
+                                                                       scheduler=None)
+                    final_val_loss = val_losses[-1]
+                    print(f"Validation Loss: {final_val_loss:.4f}")
+                    if final_val_loss < best_val_loss:
+                        best_val_loss = final_val_loss
+                        best_h1 = h1
+                        best_num_layers = num_layers
+                        best_params = {'lr': lr, 'batch_size': batch_size, 'weight_decay': weight_decay, 'h1': h1, 'layers': num_layers}
+                        best_model = trained_model  # Save the best model
+
 
 
 
