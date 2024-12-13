@@ -4,8 +4,6 @@ from torch.utils.data import DataLoader
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-
-from BASIC_NEURAL_NETWORK_V1 import basic_model
 from dataset_class_V2 import MergedDataset
 from utilities import setup_device, set_seed, train_regression_model, test_model, Model, unscale
 from torch.utils.data import random_split
