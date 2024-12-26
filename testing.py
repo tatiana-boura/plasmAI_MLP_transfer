@@ -14,7 +14,7 @@ device = setup_device()
 basic_model = Model()
 dataset_test = MergedDataset('test_data_no_head_outer_corner_O2.csv')
 test_loader = DataLoader(dataset_test, batch_size=16, shuffle=False)
-basic_model.load_state_dict(torch.load('trained_model1_O2.pth'))
+basic_model.load_state_dict(torch.load('trained_model1_O2.pth')) #change O2 to Ar if you want to choose the other dataset
 trained_model = basic_model
 criterion = nn.SmoothL1Loss() #calculate_huber_loss #
 # Evaluate on the test set
@@ -35,7 +35,7 @@ print(type(output_columns))
 
 print(f"all_predictions shape: {all_predictions.shape}")
 print(f"Length of output_columns: {len(output_columns)}")
-
+#unscale with training std and mean
 unscaled_predictions = unscale(all_predictions, output_columns, scaling_info)
 predictions_df = pd.DataFrame(unscaled_predictions, columns=output_columns)
 
@@ -163,7 +163,7 @@ plt.tight_layout()
 plt.show()
 
 # Plot residuals
-residuals = real_targets - model_predictions
+residuals = abs(real_targets - model_predictions)/real_targets * 100
 residuals_flatten = residuals.values.flatten()
 
 # Plot residuals using a scatter plot (for each data point)
@@ -176,10 +176,15 @@ plt.ylabel('Residuals (Actual - Predicted)')
 plt.show()
 
 # Visualize distribution of residuals
+plt.rcParams.update({'font.size': 20})  # Adjust font size as needed
 plt.figure(figsize=(10, 6))
 # sns.histplot(residuals, kde=True, color='blue')  # KDE to show the distribution
 sns.kdeplot(residuals, color='blue', fill=False)
 plt.title('Histogram of Residuals')
-plt.xlabel('Residuals')
-plt.ylabel('Frequency')
+plt.xlabel('(physics_based – NN)/physics_based %', fontsize=28)
+plt.ylabel('Frequency', fontsize=28)
+plt.rcParams.update({'font.size': 26})
+plt.tick_params(axis='both', which='major', labelsize=22)
 plt.show()
+
+print(abs(real_targets - model_predictions)/real_targets * 100)
