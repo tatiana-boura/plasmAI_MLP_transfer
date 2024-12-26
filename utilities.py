@@ -170,7 +170,7 @@ def unscale(data, column_names, scaling_info):
         unscaled_data[:, i] = (data[:, i] * std) + mean  # Reverse normalization
     return unscaled_data
 
-
+#manual loss functions
 class calculate_weighted_mse:
 
     def __init__(self, reduction): #i can choose for sum of errors or mean of errors or none for elemntwise
@@ -220,7 +220,7 @@ class calculate_huber_loss:
                            self.delta * (error - 0.5 * self.delta))  # Absolute loss
 
         return loss.mean()  # Return the mean loss over the batch
-
+#dynamic neural network to be used at the hyperparameter search
 class Model_dynamic(nn.Module):
     def __init__(self, h1, num_layers):
         super().__init__()
