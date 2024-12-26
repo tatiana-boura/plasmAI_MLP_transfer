@@ -95,10 +95,11 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
         else:
             current_lr = optimizer.param_groups[0]['lr']  # Fallback if no scheduler is provided
 
-        if epoch % 10 == 0 or epoch == num_epochs-1:
+        if epoch % 10 == 0 or epoch == num_epochs-1: #print metrics
             print(f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Learning Rate: {current_lr:.4e}" )
             for col in range(outputs.shape[1]):
                 print(f"  R^2 for column {col + 1}: {r2_values[col]:.4f}")
+            print(f"  Mean R²: {mean_r2:.4f}")
             for col in range(outputs.shape[1]):
                 print(f"  MSE for column {col + 1}: {mse_values[col]:.4f}")
             print(f"  Mean MSE for all columns: {mean_mse:.4f}")
@@ -170,10 +171,28 @@ def unscale(data, column_names, scaling_info):
     return unscaled_data
 
 
-def calculate_weighted_mse(predicted_values, true_values):
-    # Ensure that the inputs are numpy arrays
-    true_values = true_values.clone().detach() #(true_values, dtype=torch.float32)
-    predicted_values = predicted_values.clone().detach().requires_grad_(True)
+class calculate_weighted_mse:
+
+    def __init__(self, reduction): #i can choose for sum of errors or mean of errors or none for elemntwise
+        self.reduction = reduction
+
+    def forward(self, input, target):
+        # Step 2: Check that input and target have the same shape
+        if input.shape != target.shape:
+            raise ValueError("Input and target must have the same shape")
+
+        # Step 3: Compute the squared differences (squared error)
+        squared_error = (input - target) ** 2
+        #weighted_squared_error = squared_error * weights
+
+        # Step 4: Apply the reduction method (mean, sum, or none)
+        if self.reduction == 'mean':
+            return squared_error.mean()  # Mean of squared errors
+        elif self.reduction == 'sum':
+            return squared_error.sum()  # Sum of squared errors
+        else:
+            return squared_error  # (element-wise squared error)
+
 
 
 
@@ -181,31 +200,26 @@ def calculate_weighted_mse(predicted_values, true_values):
     #     0.093312122, 0.102769082, 0.105229524, 0.118937088, 0.13627972,
     #     0.144720322, 0.153479654, 0.107621811, 0.035236323, 0.002414354
     # ], dtype=torch.float32)
-
-    # Compute the squared differences (error) for each column
-    squared_diffs = (true_values - predicted_values) ** 2
-
     # Apply the weights to each column's squared error
-    weighted_squared_diffs = squared_diffs  #* weights_tensor
 
-    # Calculate the mean of the weighted squared differences (weighted MSE)
-    weighted_mse = weighted_squared_diffs.mean()
+class calculate_huber_loss:
+    def __init__(self, delta: float = 1.0):
 
-    return weighted_mse
+        #delta (float): The threshold at which to switch between squared loss and absolute loss.
 
+        super(calculate_huber_loss, self).__init__()
+        self.delta = delta
 
-def calculate_huber_loss(predicted_values, true_values, delta=1.0):
-    true_values = true_values.clone().detach()  # (true_values, dtype=torch.float32)
-    predicted_values = predicted_values.clone().detach().requires_grad_(True)
-    diff = torch.abs(predicted_values - true_values)
+    def forward(self, y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+        # Compute the absolute error
+        error = torch.abs(y_true - y_pred)
 
-    # Compute the Huber loss
-    loss = torch.where(diff < delta,
-                       0.5 * diff ** 2,  # If difference is less than delta, use squared loss
-                       delta * (diff - 0.5 * delta))  # Otherwise, use linear loss
-    loss[:, :6] *= 4
-    return loss.mean()
+        # Calculate Huber loss based on the threshold delta
+        loss = torch.where(error <= self.delta,
+                           0.5 * error ** 2,  # Squared loss
+                           self.delta * (error - 0.5 * self.delta))  # Absolute loss
 
+        return loss.mean()  # Return the mean loss over the batch
 
 class Model_dynamic(nn.Module):
     def __init__(self, h1, num_layers):
