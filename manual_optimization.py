@@ -29,10 +29,10 @@ learning_rates = np.logspace(-5, -3, num=10)
 batch_sizes = [32, 64, 128]
 weight_decays = np.logspace(-6, -1, num=10)
 h1_values = [5,10,15,20]
-num_layers_values = [1,2,3,4]
+num_layers_values = [1,2,3]
 
 # Initialize the best validation loss and corresponding hyperparameters
-best_val_loss = -1e-6
+best_val_loss = float('inf')
 best_params = None
 test_loader = DataLoader(dataset_test, batch_size=16, shuffle=False)
 
@@ -63,7 +63,7 @@ for h1 in h1_values:
                                                                        device=device,
                                                                        patience=5,
                                                                        scheduler=None)
-                    final_val_loss = val_losses[-1]
+                    final_val_loss = val_losses[-1] #choose the final val_loss, when the training stops
                     print(f"Validation Loss: {final_val_loss:.4f}")
                     if final_val_loss < best_val_loss:
                         best_val_loss = final_val_loss
