@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-from dataset_class_V2 import MergedDataset
+from dataset_class_V2 import MergedDatasetTest
 import json
 import pandas as pd
 import numpy as np
@@ -12,7 +12,7 @@ from utilities import setup_device, test_model, Model, unscale
 
 device = setup_device()
 basic_model = Model()
-dataset_test = MergedDataset('test_data_no_head_outer_corner_O2.csv')
+dataset_test = MergedDatasetTest('test_data_no_head_outer_corner_O2.csv')
 test_loader = DataLoader(dataset_test, batch_size=16, shuffle=False)
 basic_model.load_state_dict(torch.load('trained_model1_O2.pth')) #change O2 to Ar if you want to choose the other dataset
 trained_model = basic_model
