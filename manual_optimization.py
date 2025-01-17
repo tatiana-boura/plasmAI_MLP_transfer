@@ -17,7 +17,7 @@ set_seed(seed_num)
 
 start_time = time.time()
 
-dataset =  MergedDataset('train_data_no_head_outer_corner_O2.csv')
+dataset = MergedDataset('train_data_no_head_outer_corner_O2.csv')
 dataset_test = MergedDataset('test_data_no_head_outer_corner_O2.csv')
 # Set the sizes for training, validation, and  testing
 train_size = int(0.8 * len(dataset))  # 80% for training
@@ -28,8 +28,8 @@ train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 learning_rates = np.logspace(-5, -3, num=10)
 batch_sizes = [32, 64, 128]
 weight_decays = np.logspace(-6, -1, num=10)
-h1_values = [5,10,15,20]
-num_layers_values = [1,2,3]
+h1_values = [5, 10, 15, 20]
+num_layers_values = [1, 2, 3]
 
 # Initialize the best validation loss and corresponding hyperparameters
 best_val_loss = float('inf')
@@ -50,29 +50,29 @@ for h1 in h1_values:
                     criterion = nn.SmoothL1Loss()
                     # Use Adam optimizer with L2 regularization (weight decay)
                     optimizer = torch.optim.Adam(basic_model.parameters(), lr=lr, weight_decay=weight_decay)
-                    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.1)
+                    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.1)
 
                     epochs = 600
 
                     trained_model, losses, val_losses = train_regression_model(model=basic_model,
-                                                                       train_loader=train_loader,
-                                                                       val_loader=val_loader,
-                                                                       criterion=criterion,
-                                                                       optimizer=optimizer,
-                                                                       num_epochs=epochs,
-                                                                       device=device,
-                                                                       patience=5,
-                                                                       scheduler=None)
-                    final_val_loss = val_losses[-1] #choose the final val_loss, when the training stops
-                    print(f"Validation Loss: {final_val_loss:.4f}")
-                    if final_val_loss < best_val_loss:
-                        best_val_loss = final_val_loss
+                                                                               train_loader=train_loader,
+                                                                               val_loader=val_loader,
+                                                                               criterion=criterion,
+                                                                               optimizer=optimizer,
+                                                                               num_epochs=epochs,
+                                                                               device=device,
+                                                                               patience=5,
+                                                                               scheduler=None)
+                    min_val_loss = min(val_losses) # choose the final val_loss, when the training stops
+                    print(f"Validation Loss: {min_val_loss:.4f}")
+
+                    if min_val_loss < best_val_loss:
+                        best_val_loss = min_val_loss
                         best_h1 = h1
                         best_num_layers = num_layers
-                        best_params = {'lr': lr, 'batch_size': batch_size, 'weight_decay': weight_decay, 'h1': h1, 'layers': num_layers}
+                        best_params = {'lr': lr, 'batch_size': batch_size, 'weight_decay': weight_decay,
+                                       'h1': h1, 'layers': num_layers}
                         best_model = trained_model  # Save the best model
-
-
 
 
 model_save_path = 'trained_model1_O2_optimized.pth'

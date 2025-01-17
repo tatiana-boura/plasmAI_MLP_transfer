@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import random
 import numpy as np
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # Device setup (CUDA or CPU)
 def setup_device():
@@ -36,7 +36,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
     best_model_state = None
     # mae_scores = []
     mse_values = []
-    best_r2 = -0.0001
+    best_r2 = -float('inf')
     for epoch in range(num_epochs):
         model.train()  # Make model into training mode
         train_loss = 0
@@ -57,7 +57,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
         train_loss /= len(train_loader.dataset)
         train_losses.append(train_loss)
 
-        #Validation step
+        # Validation step
         model.eval() #turn into evaluation mode
         val_loss = 0
         r2_values = []
@@ -74,28 +74,25 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                     pred_col = outputsv[:, col].cpu().numpy()  # Get predictions for the current column
                     target_col = targets[:, col].cpu().numpy()  # Get targets for the current column
 
-                    # Calculate the residual sum of squares (RSS) and total sum of squares (TSS)
-                    rss = ((target_col - pred_col) ** 2).sum()  # Residual Sum of Squares
-                    tss = ((target_col - target_col.mean()) ** 2).sum()  # Total Sum of Squares
-                    # Calculate R^2 using the formula
-                    r2 = 1 - (rss / tss)
+                    r2 = r2_score(target_col, pred_col)
                     r2_values.append(r2)
                     # Calculate MSE for the current column
-                    mse = ((target_col - pred_col) ** 2).mean()
+                    mse = mean_squared_error(target_col, pred_col)
                     mse_values.append(mse)
 
         val_loss /= len(val_loader.dataset)
         val_losses.append(val_loss)
-        mean_r2 = sum(r2_values) / len(r2_values)
+        mean_r2 = np.mean(r2_values)
+        mean_mse = np.mean(mse_values)  # Calculate mean MSE for all columns
+
         # Adjust learning rate with ReduceLROnPlateau
-        mean_mse = sum(mse_values) / len(mse_values)  # Calculate mean MSE for all columns
         if scheduler:
             scheduler.step(val_loss)
             current_lr = scheduler.get_last_lr()[0]  # Get the learning rate of the first group
         else:
             current_lr = optimizer.param_groups[0]['lr']  # Fallback if no scheduler is provided
 
-        if epoch % 10 == 0 or epoch == num_epochs-1: #print metrics
+        if epoch % 10 == 0 or epoch == num_epochs-1: # print metrics
             print(f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Learning Rate: {current_lr:.4e}" )
             for col in range(outputs.shape[1]):
                 print(f"  R^2 for column {col + 1}: {r2_values[col]:.4f}")
@@ -103,7 +100,8 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
             for col in range(outputs.shape[1]):
                 print(f"  MSE for column {col + 1}: {mse_values[col]:.4f}")
             print(f"  Mean MSE for all columns: {mean_mse:.4f}")
-        #save the model if mean R^2 improves
+
+        # save the model if mean R^2 improves
         # if mean_r2 > best_r2:
         #     best_r2 = mean_r2
         #     best_model_state = model.state_dict()
@@ -111,7 +109,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
         # Early stopping implementation
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            early_counter = 0 #reset the counter if validation loss improves
+            early_counter = 0  # reset the counter if validation loss improves
             best_model_state = model.state_dict()
         else:
             early_counter += 1
