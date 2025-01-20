@@ -10,7 +10,7 @@ from sklearn.metrics import r2_score, mean_squared_error
 from utilities import setup_device, set_seed, train_regression_model, test_model, Model, unscale
 from torch.utils.data import random_split
 import optuna
-from optimization_utility import objective  # Import the objective function from optimization_file.py
+from optimization_utility import objective, callback  # Import the objective function from optimization_file.py
 # =======================================================
 device = setup_device()
 # =======================================================
@@ -18,32 +18,58 @@ device = setup_device()
 # This function sets all the required seeds to ensure the experiments are reproducible. Use it in your main code-file.
 seed_num = 41
 set_seed(seed_num)
-
-# ===============================================================
-
-start_time = time.time()
-# ===========================================================
-
-dataset = MergedDataset('train_data_no_head_outer_corner.csv')
-dataset_test = MergedDataset('test_data_no_head_outer_corner.csv')
+dataset = MergedDataset('train_data_no_head_outer_corner_O2.csv')
+dataset_test = MergedDataset('test_data_no_head_outer_corner_O2.csv')
 # Set the sizes for training, validation, and  testing
 train_size = int(0.8 * len(dataset))  # 80% for training
 val_size = len(dataset) - train_size    # 20% for validation
 # test_size = len(dataset) - train_size - val_size  # Remaining 20% for testing
 
 train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+best_r2_trial = {'r2': -float('inf'), 'trial_number': None, 'params': None}
 
-# def objective_wrapper(trial):
-#     return objective(trial, train_dataset, val_dataset, device, 600)
+def custom_callback(study, trial):
+    global best_r2_trial
+    callback(study, trial, best_r2_trial)  # Modify callback to accept best_r2_trial
 
 # Create Optuna study to optimize the objective function
+start_time = time.time()
 study = optuna.create_study(direction='minimize')  # Minimize validation loss
-study.optimize(lambda trial: objective(trial, train_dataset, val_dataset, device, num_of_epochs=600), n_trials=10)  # Number of trials to run
+study.optimize(lambda trial: objective(trial, train_dataset, val_dataset, device, num_of_epochs=600), n_trials=60, callbacks=[custom_callback])  # Number of trials to run
+best_trial = study.best_trial #best trial with the minimum validation loss
+end_time = time.time()
 
 # Print the best hyperparameters and the best value found
 print(f"Best hyperparameters: {study.best_params}")
 print(f"Best validation loss: {study.best_value:.4f}")
+print(f"Trial with highest R2: {best_r2_trial['trial_number']} | R2: {best_r2_trial['r2']:.4f} | Params: {best_r2_trial['params']}")
+print(f"Best trial (validation loss): {best_trial.number}")
+print(f"time for optuna study: {(end_time-start_time):.4f}")
 
+#print to json file the results
+results = {
+    "best_hyperparameters": study.best_params,
+    "best_validation_loss": study.best_value,
+    "best_r2_trial": {
+        "trial_number": best_r2_trial['trial_number'],
+        "r2": best_r2_trial['r2'],
+        "params": best_r2_trial['params']
+    },
+    "best_trial_number": best_trial.number,
+    "study_duration": end_time - start_time
+}
+
+print(json.dumps(results, indent=4))
+
+# Save results to a JSON file
+output_file = "optuna_results.json"
+with open(output_file, "w") as f:
+    json.dump(results, f, indent=4)
+
+print("The program is paused. Press Enter to continue.")
+input()
+print("Continuing the program...")
+#===================================================================
 # Use the best hyperparameters to train the final model
 best_lr = study.best_params['lr']
 best_batch_size = study.best_params['batch_size']

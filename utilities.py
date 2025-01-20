@@ -61,7 +61,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
         model.eval() #turn into evaluation mode
         val_loss = 0
         r2_values = []
-
+        mean_r2_scores = []
         with torch.no_grad(): #disable gradient calc
             for inputs, targets in val_loader:
                 inputs, targets = inputs.to(device), targets.to(device)
@@ -84,7 +84,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
         val_losses.append(val_loss)
         mean_r2 = np.mean(r2_values)
         mean_mse = np.mean(mse_values)  # Calculate mean MSE for all columns
-
+        mean_r2_scores.append(mean_r2)
         # Adjust learning rate with ReduceLROnPlateau
         if scheduler:
             scheduler.step(val_loss)
@@ -118,7 +118,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                 model.load_state_dict(best_model_state)
                 break
 
-    return model, train_losses, val_losses
+    return model, train_losses, val_losses, mean_r2_scores
 
 
 def test_model(model, test_loader, criterion, device):

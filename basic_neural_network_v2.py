@@ -41,7 +41,7 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', pa
 #basic_model.load_state_dict(torch.load('trained_model1_O2.pth'))
 epochs = 600
 
-trained_model, losses, val_losses = train_regression_model(model=basic_model,
+trained_model, losses, val_losses, r2_mean = train_regression_model(model=basic_model,
                                                            train_loader=train_loader,
                                                            val_loader=val_loader,
                                                            criterion=criterion,

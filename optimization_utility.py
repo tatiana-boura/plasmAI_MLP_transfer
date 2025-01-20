@@ -2,22 +2,23 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from utilities import train_regression_model, Model
+from utilities import train_regression_model, Model_dynamic
 
 
 def objective(trial, train_dataset, val_dataset, device, num_of_epochs):
     # Hyperparameters to optimize
-    lr = trial.suggest_float('lr', 1e-5, 1e-1, log=True)  # Log scale search for learning rate
+    lr = trial.suggest_float('lr', 1e-7, 1e-2, log=True)  # Log scale search for learning rate
     batch_size = trial.suggest_categorical('batch_size', [16, 32, 64])  # Discrete search for batch size
     weight_decay = trial.suggest_float('weight_decay', 1e-6, 1e-2, log=True)  # Log scale search for weight decay
-
-    # You can add here different layers and their sizes, so that we also tune the architecture.
+    h1_values = trial.suggest_int('h1', 5, 15)
+    num_layers = trial.suggest_int('num_layers', 1, 3)
 
     # Create DataLoader with the current batch size
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
     # Create model instance
-    model = Model()
+    model = Model_dynamic(h1=h1_values, num_layers=num_layers)
+    model.to(device)
 
     # Define the criterion and optimizer
     criterion = nn.MSELoss()
@@ -25,7 +26,7 @@ def objective(trial, train_dataset, val_dataset, device, num_of_epochs):
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.1)
 
     # Train the model
-    trained_model, train_losses, val_losses = train_regression_model(
+    trained_model, train_losses, val_losses, r2_mean = train_regression_model(
         model=model,
         train_loader=train_loader,
         val_loader=val_loader,
@@ -36,11 +37,19 @@ def objective(trial, train_dataset, val_dataset, device, num_of_epochs):
         patience=10,
         scheduler=scheduler
     )
-    # Get the validation loss for the best model
-    '''
-    This is not correct. The last one is not the smallest one.
-    final_val_loss = val_losses[-1]'''
 
     min_val_loss = min(val_losses)
+    max_mean_r2 = max(r2_mean)
+    # Set `max_mean_r2` as a trial user attribute
+    trial.set_user_attr("max_mean_r2", max_mean_r2)
 
     return min_val_loss  # Minimize the validation loss
+
+def callback(study, trial, best_r2_trial):
+    # Retrieve the `max_mean_r2` value from the user attributes
+    max_mean_r2 = trial.user_attrs.get("max_mean_r2", -float('inf'))
+    if max_mean_r2 > best_r2_trial['r2']:
+        best_r2_trial['r2'] = max_mean_r2
+        best_r2_trial['trial_number'] = trial.number
+        best_r2_trial['params'] = trial.params
+        print(f"New best R2 trial: {best_r2_trial['trial_number']} | R2: {best_r2_trial['r2']:.4f} | Params: {best_r2_trial['params']}")
