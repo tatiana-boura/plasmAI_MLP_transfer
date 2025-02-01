@@ -1,0 +1,17 @@
+{
+    "best_hyperparameters": {
+        "lr": 0.000949541278544346,
+        "batch_size": 16,
+        "weight_decay": 0.00012573317043580693,
+        "h1": 15,
+        "num_layers": 3
+    },
+    "best_validation_loss": -0.9429143054452956,
+    "best_r2_trial": {
+        "trial_number": null,
+        "r2": -Infinity,
+        "params": null
+    },
+    "best_trial_number": 16,
+    "study_duration": 9594.378404378891
+}

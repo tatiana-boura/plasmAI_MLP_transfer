@@ -1,0 +1,23 @@
+{
+    "best_hyperparameters": {
+        "lr": 7.698404130454936e-05,
+        "batch_size": 32,
+        "weight_decay": 5.54219619093451e-05,
+        "h1": 9,
+        "num_layers": 3
+    },
+    "best_validation_loss": 0.11250229885695669,
+    "best_r2_trial": {
+        "trial_number": 21,
+        "r2": 0.9609862670302391,
+        "params": {
+            "lr": 8.19051857778473e-05,
+            "batch_size": 32,
+            "weight_decay": 4.327213302496513e-05,
+            "h1": 7,
+            "num_layers": 3
+        }
+    },
+    "best_trial_number": 68,
+    "study_duration": 35245.31711244583
+}
