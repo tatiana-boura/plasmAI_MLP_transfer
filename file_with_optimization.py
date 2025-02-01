@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import time
 import matplotlib.pyplot as plt
-from dataset_class_V2 import MergedDataset
+from dataset_class_V2 import MergedDataset, MergedDatasetTest
 import json
 import pandas as pd
 from sklearn.metrics import r2_score, mean_squared_error
@@ -11,15 +11,19 @@ from utilities import setup_device, set_seed, train_regression_model, test_model
 from torch.utils.data import random_split
 import optuna
 from optimization_utility import objective, callback  # Import the objective function from optimization_file.py
+import os
 # =======================================================
 device = setup_device()
+current_directory = os.path.dirname(os.path.realpath(__file__))
 # =======================================================
 
 # This function sets all the required seeds to ensure the experiments are reproducible. Use it in your main code-file.
 seed_num = 41
 set_seed(seed_num)
-dataset = MergedDataset('train_data_no_head_outer_corner_O2.csv')
-dataset_test = MergedDataset('test_data_no_head_outer_corner_O2.csv')
+csv_file_path_train = os.path.join(current_directory, 'test_with_outputs_randomized_not1to10', 'train_data_no_head_outer_corner_rand_O2.csv')
+csv_file_path_test = os.path.join(current_directory, 'test_with_outputs_randomized_not1to10', 'test_data_no_head_outer_corner_rand_O2.csv')
+dataset = MergedDataset(csv_file_path_train)
+dataset_test = MergedDatasetTest(csv_file_path_test)
 # Set the sizes for training, validation, and  testing
 train_size = int(0.8 * len(dataset))  # 80% for training
 val_size = len(dataset) - train_size    # 20% for validation
@@ -38,11 +42,15 @@ study = optuna.create_study(direction='minimize')  # Minimize validation loss
 study.optimize(lambda trial: objective(trial, train_dataset, val_dataset, device, num_of_epochs=600), n_trials=60, callbacks=[custom_callback])  # Number of trials to run
 best_trial = study.best_trial #best trial with the minimum validation loss
 end_time = time.time()
+# Get the R2 score of the best trial
+trial_r2 = best_trial.user_attrs.get("mean_r2", None)
 
 # Print the best hyperparameters and the best value found
 print(f"Best hyperparameters: {study.best_params}")
 print(f"Best validation loss: {study.best_value:.4f}")
-print(f"Trial with highest R2: {best_r2_trial['trial_number']} | R2: {best_r2_trial['r2']:.4f} | Params: {best_r2_trial['params']}")
+print(f"R2 score at the best trial:")
+print(trial_r2)
+#print(f"Trial with highest R2: {best_r2_trial['trial_number']} | R2: {best_r2_trial['r2']:.4f} | Params: {best_r2_trial['params']}")
 print(f"Best trial (validation loss): {best_trial.number}")
 print(f"time for optuna study: {(end_time-start_time):.4f}")
 
@@ -56,13 +64,14 @@ results = {
         "params": best_r2_trial['params']
     },
     "best_trial_number": best_trial.number,
+    #"r2_at_best_trial": best_trial_r2,
     "study_duration": end_time - start_time
 }
 
 print(json.dumps(results, indent=4))
 
 # Save results to a JSON file
-output_file = "optuna_results.json"
+output_file = "optuna_results_weighted_mse_rand_outputs.json"
 with open(output_file, "w") as f:
     json.dump(results, f, indent=4)
 

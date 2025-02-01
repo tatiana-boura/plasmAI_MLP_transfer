@@ -4,6 +4,10 @@ import torch.nn.functional as F
 import random
 import numpy as np
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.preprocessing import MinMaxScaler
+import pandas as pd
+from torch.utils.data import Dataset
+import json
 
 # Device setup (CUDA or CPU)
 def setup_device():
@@ -27,7 +31,7 @@ def set_seed(seed):
 def train_regression_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device, patience, scheduler):
     # Move model to the specified device
     model.to(device)
-
+    r2_first_5 = [] #vector to track the r2 for the first 5 columns
     # To track the history of training losses
     train_losses = []
     val_losses = []
@@ -73,12 +77,13 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                 for col in range(outputsv.shape[1]):
                     pred_col = outputsv[:, col].cpu().numpy()  # Get predictions for the current column
                     target_col = targets[:, col].cpu().numpy()  # Get targets for the current column
-
                     r2 = r2_score(target_col, pred_col)
                     r2_values.append(r2)
                     # Calculate MSE for the current column
                     mse = mean_squared_error(target_col, pred_col)
                     mse_values.append(mse)
+
+
 
         val_loss /= len(val_loader.dataset)
         val_losses.append(val_loss)
@@ -118,7 +123,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                 model.load_state_dict(best_model_state)
                 break
 
-    return model, train_losses, val_losses, mean_r2_scores
+    return model, train_losses, val_losses, mean_r2
 
 
 def test_model(model, test_loader, criterion, device):
@@ -157,7 +162,7 @@ class Model(nn.Module):
 
 
 def unscale(data, column_names, scaling_info):
-    unscaled_data = data.copy()
+    unscaled_data = data
     num_columns = data.shape[1]
     for i, column in enumerate(column_names):
         if i >= num_columns:  # Check if index exceeds the number of columns
@@ -178,8 +183,8 @@ class calculate_weighted_mse:
         # Step 2: Check that input and target have the same shape
         if input.shape != target.shape:
             raise ValueError("Input and target must have the same shape")
-
         # Step 3: Compute the squared differences (squared error)
+        weights = torch.tensor([2,0.5,2,0.1,0.8,2,0.1,2,1,0.8])
         squared_error = (input - target) ** 2
         #weighted_squared_error = squared_error * weights
 
@@ -190,15 +195,8 @@ class calculate_weighted_mse:
             return squared_error.sum()  # Sum of squared errors
         else:
             return squared_error  # (element-wise squared error)
-
-
-
-
-    # weights_tensor = torch.tensor([
-    #     0.093312122, 0.102769082, 0.105229524, 0.118937088, 0.13627972,
-    #     0.144720322, 0.153479654, 0.107621811, 0.035236323, 0.002414354
-    # ], dtype=torch.float32)
-    # Apply the weights to each column's squared error
+    def __call__(self, input, target):
+        return self.forward(input, target)
 
 class calculate_huber_loss:
     def __init__(self, delta: float = 1.0):
@@ -240,3 +238,53 @@ class Model_dynamic(nn.Module):
             x = F.elu(self.layers[i](x))  # Apply ELU after each layer
         x = self.out(x)  # Output layer
         return x
+
+def calculate_r2(true_values, predicted_values):
+    # Ensure true_values and predicted_values are numpy arrays
+    true_values = np.array(true_values)
+    predicted_values = np.array(predicted_values)
+    print(true_values)
+    print(predicted_values)
+
+    # Calculate the total sum of squares (TSS)
+    mean_true = np.mean(true_values)
+    total_sum_of_squares = np.sum((true_values - mean_true) ** 2)
+
+    # Calculate the residual sum of squares (RSS)
+    residual_sum_of_squares = np.sum((true_values - predicted_values) ** 2)
+
+    # Calculate R^2
+    r2 = 1 - (residual_sum_of_squares / total_sum_of_squares)
+    return r2
+#class to import the dataset and train using min max
+class ScaledDataset(Dataset):
+    def __init__(self, csv_file, scaler=None, is_training=True, save_scaler_file='scaler_file.pk1', stats_file='scaler_stats.json'):
+        df = pd.read_csv(csv_file, sep=';')
+        #split into features and targets
+        X_columns = ['Power', 'Pressure']
+        y_columns = [col for col in df.columns if col not in X_columns]
+        self.X = df[X_columns]
+        self.y = df[y_columns]
+
+        #Code for application of minmax scaler
+        if is_training:
+            self.scaler = MinMaxScaler()
+            self.X = pd.DataFrame(self.scaler.fit_transform(self.X), columns=X_columns)
+            import joblib
+            joblib.dump(self.scaler, save_scaler_file)
+            stats = {col: {"min": float(self.scaler.data_min_[i]), "max": float(self.scaler.data_max_[i])}
+                     for i, col in enumerate(X_columns)}
+            with open(stats_file, 'w') as f:
+                json.dump(stats, f, indent=4)
+        else:
+            from joblib import load
+            self.scaler = load(save_scaler_file)
+            self.X = pd.DataFrame(self.scaler.transform(self.X), columns=X_columns)
+        self.df = pd.concat([self.X, self.y], axis=1)
+
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, idx):
+            # Return a single data point
+        return torch.tensor(self.X.iloc[idx].values, dtype=torch.float32), torch.tensor(self.y.iloc[idx].values, dtype=torch.float32)

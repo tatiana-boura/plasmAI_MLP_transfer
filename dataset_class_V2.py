@@ -18,7 +18,7 @@ class MergedDataset(Dataset):
             stats[column] = {'mean': mean, 'std': std}
 
         # Write statistics to a JSON file and store it
-        with open('column_stats02.json', 'w') as f:
+        with open('column_stats02_rand.json', 'w') as f:
             json.dump(stats, f)
 
         X_columns = ['Power', 'Pressure']  # features
@@ -56,7 +56,7 @@ class MergedDataset(Dataset):
             print("-" * 30)  # print a line -----------
 
 class MergedDatasetTest(Dataset):
-    def __init__(self, csv_file, stats_file='column_stats02.json'):
+    def __init__(self, csv_file, stats_file):
         df = pd.read_csv(csv_file, sep=';')
         # Load the pre-calculated mean and std statistics from the JSON file
         with open(stats_file, 'r') as f:
@@ -105,6 +105,33 @@ class MergedDatasetTest(Dataset):
 class testdataset_unormalized(Dataset):
     def __init__(self):
         df = pd.read_csv('train_data_no_head_outer_corner.csv', sep=';')
+        X_columns = ['Power', 'Pressure']  # features
+        y_columns = [col for col in df.columns if col not in X_columns]  # To be predicted
+        self.X, self.y = df[X_columns], df[y_columns]
+
+        self.df = df
+
+    def __getitem__(self, index):
+        X = self.X.iloc[index, :].values
+        y = self.y.iloc[index, :].values
+        return torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
+
+    def __len__(self):
+        return self.X.shape[0]
+
+class MergedDatasetTest_min_max(Dataset):
+    def __init__(self, csv_file, stats_file='column_stats02_min_max.json'):  #if min max normalization was used in training
+        df = pd.read_csv(csv_file, sep=';')
+        # Load the pre-calculated mean and std statistics from the JSON file
+        with open(stats_file, 'r') as f:
+            stats = json.load(f)
+
+        for column in df.columns:
+            if column in stats:
+                col_min = stats[column]['min']
+                col_max = stats[column]['max']
+                df[column] = (df[column] - col_min) / (col_max - col_min + 1e-10)  # Avoid division by zero
+
         X_columns = ['Power', 'Pressure']  # features
         y_columns = [col for col in df.columns if col not in X_columns]  # To be predicted
         self.X, self.y = df[X_columns], df[y_columns]
