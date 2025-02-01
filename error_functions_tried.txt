@@ -1,5 +1,0 @@
-1. MSE and weighted MSE -> the loss does not degrade
-still some R^2 < 0 and MAE magnitude of 1E-9
-
-2. Huber loss -> the loss does not degrade
-still some R^2 < 0 and MAE magnitude of 1E-9, max MSE 1E-17
