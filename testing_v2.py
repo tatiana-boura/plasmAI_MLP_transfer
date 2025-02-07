@@ -14,12 +14,11 @@ import os
 current_directory = os.path.dirname(os.path.realpath(__file__))
 csv_file_path_test = os.path.join(current_directory, 'test_with_outputs_randomized_not1to10_oxygen', 'test_data_no_head_outer_corner_rand_O2.csv')
 neural_network = 'trained_model1_O2_optim_weighted_rand.pth'
-h1_val = 11
-layers = 2
-batch = 64
+h1_val = 13
+layers = 3
+batch = 16
 statsjson = 'column_stats02_rand.json' #also change the stats file at the MergedDatasetTest
-csv_file_path_test
-name_of_predictions = 'DELunscaled_predictions1_O2_optim_weighted_rand.csv' #csv file for unscaled predictions to be saved
+name_of_predictions = 'unscaled_predictions1_O2_optim_weighted_rand.csv' #csv file for unscaled predictions to be saved
 
 #make the calculations at the test set
 device = setup_device()
@@ -98,7 +97,3 @@ plt.xlim(-1, 15)    # Set the x-axis to extend to 15%
 plt.rcParams.update({'font.size': 24})
 plt.tick_params(axis='both', which='major', labelsize=26)
 plt.show()
-
-
-
-
