@@ -1,0 +1,2 @@
+Then, take the trained $M_1$ and continue training it with the whole $D_2$, 
+using a small learning rate (at least 10 times smaller that the initial) and make sure the batch size is not small
