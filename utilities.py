@@ -184,8 +184,9 @@ class calculate_weighted_mse:
         if input.shape != target.shape:
             raise ValueError("Input and target must have the same shape")
         # Step 3: Compute the squared differences (squared error)
-        weights = torch.tensor([2,0.5,2,0.1,0.8,2,0.1,2,1,0.8])
-        squared_error = (input - target) ** 2
+        #weights = torch.tensor([2,0.5,2,0.1,0.8,2,0.1,2,1,0.8]) for oxygen model randomized columns
+        weights = torch.tensor([2,2,2,2,1,0.8,0.5,0.5,0.1,0.1]) #for oxygen model 1-10 columns
+        squared_error = (input - target) ** 2 * weights
         #weighted_squared_error = squared_error * weights
 
         # Step 4: Apply the reduction method (mean, sum, or none)

@@ -12,20 +12,20 @@ import os
 
 #specify test data, neural network and folder
 current_directory = os.path.dirname(os.path.realpath(__file__))
-csv_file_path_test = os.path.join(current_directory, 'test_with_outputs_randomized_not1to10_oxygen', 'test_data_no_head_outer_corner_rand_O2.csv')
-neural_network = 'trained_model1_O2_optim_weighted_rand.pth'
+csv_file_path_test = os.path.join(current_directory,'trained_model_Ar_weighted_tuned_JAN25(v02_physics_based)', 'train_data_no_head_outer_corner_Ar.csv')
+neural_network = 'M21_trained_model1_Ar_with_O2_data.pth'
 h1_val = 13
 layers = 3
 batch = 16
-statsjson = 'column_stats02_rand.json' #also change the stats file at the MergedDatasetTest
-name_of_predictions = 'unscaled_predictions1_O2_optim_weighted_rand.csv' #csv file for unscaled predictions to be saved
+statsjson = 'column_stats02Ar.json' #also change the stats file at the MergedDatasetTest
+name_of_predictions = 'M21unscaled_predictions1_onD2_Train_UNTRAINED.csv' #csv file for unscaled predictions to be saved
 
 #make the calculations at the test set
 device = setup_device()
 basic_model = Model_dynamic(h1=h1_val, num_layers=layers)
 dataset_test = MergedDatasetTest(csv_file_path_test,statsjson) #!!don't forget to change the stats file at the MergedDatasetTest
 test_loader = DataLoader(dataset_test, batch_size=batch, shuffle=False)
-basic_model.load_state_dict(torch.load(neural_network)) #trained_model1_O2_weighted_mse.pth change O2 to Ar if you want to choose the other dataset
+# basic_model.load_state_dict(torch.load(neural_network)) #trained_model1_O2_weighted_mse.pth change O2 to Ar if you want to choose the other dataset
 trained_model = basic_model
 criterion = calculate_weighted_mse(reduction='mean') #nn.SmoothL1Loss() #calculate_huber_loss #
 # Evaluate on the test set
@@ -92,8 +92,8 @@ plt.title('Histogram of Residuals')
 plt.xlabel('(physics_based – NN)/physics_based %', fontsize=28)
 plt.ylabel('Frequency', fontsize=28)
 # Set axis limits
-plt.ylim(0, 0.10)  # Set the y-axis maximum to 0.10
-plt.xlim(-1, 15)    # Set the x-axis to extend to 15%
+# plt.ylim(0, 0.10)  # Set the y-axis maximum to 0.10
+#plt.xlim(-1, 500)    # Set the x-axis to extend to 15%
 plt.rcParams.update({'font.size': 24})
 plt.tick_params(axis='both', which='major', labelsize=26)
 plt.show()
