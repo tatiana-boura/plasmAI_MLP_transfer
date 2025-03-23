@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-from dataset_class_V2 import MergedDataset, MergedDatasetTest
-#from dataset_class_V3_minmax import MergedDataset #for min max normalization of data
-from utilities import setup_device, set_seed, train_regression_model, Model, Model_dynamic, unscale, calculate_huber_loss, calculate_weighted_mse,  ScaledDataset
+from dataset_class_V3_minmax import MergedDatasetTest
+from utilities import setup_device, set_seed, calculate_weighted_mse
+from utilities_for_tl import Model_dynamic, train_regression_model
 from torch.utils.data import random_split, Subset
 import time
 import os
@@ -14,13 +14,15 @@ set_seed(seed_num)
 device = setup_device()
 current_directory = os.path.dirname(os.path.realpath(__file__))
 
-csv_file_path_train = os.path.join(current_directory, 'trained_nn_O2_weightedmse_JAN25(v02_physics_based)', 'train_data_no_head_outer_corner_O2.csv')
-statsjson = 'column_stats02Ar.json'
-model_save_path = 'M21_trained_model1_Ar_with_O2_data.pth'
-neural_network = 'trained_model1_Ar_optim_JAN25.pth' #'trained_model1_O2_optim_weightedJAN25.pth' #load the pretrained model
-h1_val = 13
+# csv_file_path_train = os.path.join(current_directory, 'trained_model_O2_weighted_tuned_JAN25(v02_physics_based)', 'train_data_no_head_outer_corner_O2.csv')
+csv_file_path_train = os.path.join(current_directory, 'split_data_tests', 'argon02', 'train_Ar_subset_80.csv' )
+statsjson = 'overall_min_max.json'
+model_save_path = 'M22_80_trained_model_Ar_with_Ar_minmax.pth'
+neural_network = 'M2_trained_model2_Ar_with_Ar_data_minmax.pth' #'trained_model1_O2_optim_weightedJAN25.pth' #load the pretrained model
+#insert the architecture of the neural_network
+h1_val = 10
 layers = 3
-batch = 16
+batch = 128
 
 #dataset = ScaledDataset('train_data_no_head_outer_corner_O2.csv', is_training=True) #for min max
 # Set the sizes for training, validation, and  testing
@@ -38,10 +40,10 @@ val_loader = DataLoader(val_dataset, batch_size=batch, shuffle=True)
 
 
 # create an instance for the model
-model = Model_dynamic(h1=h1_val, num_layers=layers)
+model = Model_dynamic(h1=h1_val, num_layers=layers, freeze_layers=[]) #change this also to the train_regression_model
 criterion = calculate_weighted_mse(reduction='mean')
-model.load_state_dict(torch.load(neural_network))
-optimizer = torch.optim.Adam(model.parameters(), lr=(0.0009518706463849217/20), weight_decay=1.0131506615948022e-05)
+# model.load_state_dict(torch.load(neural_network)) #TO CONTINUE TRAINING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+optimizer = torch.optim.Adam(model.parameters(), lr=(0.0029389095728573683), weight_decay=1.737720320769069e-06)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.1)
 #basic_model.load_state_dict(torch.load('trained_model1_O2.pth'))
 epochs = 700
@@ -53,7 +55,7 @@ trained_model, losses, val_losses, r2_mean = train_regression_model(model=model,
                                                            optimizer=optimizer,
                                                            num_epochs=epochs,
                                                            device=device,
-                                                           patience=20,
+                                                           patience=10,
                                                            scheduler=scheduler)
 end_time = time.time()
 # save the model to dictionary
