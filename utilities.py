@@ -66,12 +66,18 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
         val_loss = 0
         r2_values = []
         mean_r2_scores = []
+        all_predictions = []
+        all_targets = []
+
         with torch.no_grad(): #disable gradient calc
             for inputs, targets in val_loader:
                 inputs, targets = inputs.to(device), targets.to(device)
                 outputsv = model(inputs)        #v from validation
                 lossv = criterion(outputsv, targets)
                 val_loss += lossv.item() * inputs.size(0)
+                # Store predictions and targets for export
+                all_predictions.append(outputsv.cpu().numpy())
+                all_targets.append(targets.cpu().numpy())
 
                 #r^2 calculation
                 for col in range(outputsv.shape[1]):
@@ -82,6 +88,20 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                     # Calculate MSE for the current column
                     mse = mean_squared_error(target_col, pred_col)
                     mse_values.append(mse)
+        # ---------
+        # Flatten the lists and save them to CSV
+        all_predictions = np.vstack(all_predictions)  # Convert list of batches to full array
+        all_targets = np.vstack(all_targets)  # Convert list of batches to full array
+
+        # Create a DataFrame with meaningful column names
+        num_targets = all_targets.shape[1]
+        pred_columns = [f'Pred_{i + 1}' for i in range(num_targets)]
+        target_columns = [f'Target_{i + 1}' for i in range(num_targets)]
+        df_export = pd.DataFrame(np.hstack((all_predictions, all_targets)), columns=pred_columns + target_columns)
+
+        # Save CSV file
+        df_export.to_csv('validation_results.csv', index=False,sep=';')
+        # ---------
 
 
 
@@ -106,11 +126,6 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                 print(f"  MSE for column {col + 1}: {mse_values[col]:.4f}")
             print(f"  Mean MSE for all columns: {mean_mse:.4f}")
 
-        # save the model if mean R^2 improves
-        # if mean_r2 > best_r2:
-        #     best_r2 = mean_r2
-        #     best_model_state = model.state_dict()
-
         # Early stopping implementation
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -129,6 +144,8 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
 def test_model(model, test_loader, criterion, device):
     model.eval()
     test_loss = 0
+    r2_values = []
+    mse_values = []
     all_predictions, all_targets = [], []
     with torch.no_grad():
         for inputs, targets in test_loader:
@@ -138,10 +155,39 @@ def test_model(model, test_loader, criterion, device):
             test_loss += losst.item() * inputs.size(0)
             all_predictions.append(outputst.cpu().numpy())
             all_targets.append(targets.cpu().numpy())
-    all_predictions = np.concatenate(all_predictions)
-    all_targets = np.concatenate(all_targets)
+
+            #r^2, mse calculation
+            for col in range(outputst.shape[1]):
+                pred_col = outputst[:, col].cpu().numpy()
+                target_col = targets[:, col].cpu().numpy()  # Get targets for the current column
+                r2 = r2_score(target_col, pred_col)
+                r2_values.append(r2)
+                mse = mean_squared_error(target_col, pred_col)
+                mse_values.append(mse)
+                # print(f"  R^2 for column {col + 1}: {r2:.4f}")
+                # print(f"  MSE for column {col + 1}: {mse:.4f}")
+
+
+            mean_r2 = np.mean(r2_values)
+            mean_mse = np.mean(mse_values)
+
+    all_predictions = np.concatenate(all_predictions, axis=0)
+    all_targets = np.concatenate(all_targets, axis=0)
+    # Exclude the 9th and 10th output columns (index 8 and 9)
+    filtered_predictions = all_predictions[:, :8]  # Keep only first 8 columns
+    filtered_targets = all_targets[:, :8]  # Keep only first 8 columns
+
+    # Compute overall MSE, MAE, and R² for the first 8 outputs
+    overall_mse = mean_squared_error(filtered_targets, filtered_predictions)
+    overall_mae = mean_absolute_error(filtered_targets, filtered_predictions)
+    overall_r2 = r2_score(filtered_targets, filtered_predictions)
+
+    print(f"\nOverall Performance Metrics:")
+    print(f"  Mean MSE: {overall_mse:.7f}")
+    print(f"  Mean MAE: {overall_mae:.7f}")
+    print(f"  Mean R²: {overall_r2:.5f}")
     test_loss /= len(test_loader.dataset)
-    return test_loss, all_predictions, all_targets
+    return test_loss, all_predictions, all_targets, r2_values
 
 
 class Model(nn.Module):
