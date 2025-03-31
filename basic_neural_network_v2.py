@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-from dataset_class_V2 import MergedDataset
-#from dataset_class_V3_minmax import MergedDataset #for min max normalization of data
+# from dataset_class_V2 import MergedDataset
+from dataset_class_V3_minmax import MergedDataset #for min max normalization of data
 from utilities import setup_device, set_seed, train_regression_model, Model, Model_dynamic, unscale, calculate_huber_loss, calculate_weighted_mse,  ScaledDataset
 from torch.utils.data import random_split
 import time
@@ -34,7 +34,7 @@ val_loader = DataLoader(val_dataset, batch_size=64, shuffle=True)
 
 
 # create an instance for the model
-model = Model_dynamic(h1=11, num_layers=2)
+model = Model_dynamic(h1=10, num_layers=3)
 criterion = calculate_weighted_mse(reduction='mean')
 # nn.SmoothL1Loss() #calculate_huber_loss #nn.SmoothL1Loss() or nn.MSELoss
 # CHOOSE ADAM OPTIMIZER with a decay parameter [L2 Regularization method]

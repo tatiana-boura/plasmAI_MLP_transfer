@@ -8,7 +8,7 @@ from utilities import train_regression_model, Model_dynamic, calculate_weighted_
 def objective(trial, train_dataset, val_dataset, device, num_of_epochs):
     # Hyperparameters to optimize
     lr = trial.suggest_float('lr', 1e-7, 1e-3, log=True)  # Log scale search for learning rate
-    batch_size = trial.suggest_categorical('batch_size', [16, 32, 64])  # Discrete search for batch size
+    batch_size = trial.suggest_categorical('batch_size', [16, 32, 64, 128])  # Discrete search for batch size
     weight_decay = trial.suggest_float('weight_decay', 1e-6, 1e-2, log=True)  # Log scale search for weight decay
     h1_values = trial.suggest_int('h1', 5, 13)
     num_layers = trial.suggest_int('num_layers', 1, 3)

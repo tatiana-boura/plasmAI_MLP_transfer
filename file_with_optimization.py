@@ -20,10 +20,11 @@ current_directory = os.path.dirname(os.path.realpath(__file__))
 # This function sets all the required seeds to ensure the experiments are reproducible. Use it in your main code-file.
 seed_num = 41
 set_seed(seed_num)
-csv_file_path_train = os.path.join(current_directory, 'trained_model_Ar_weighted_tuned_JAN25(v02_physics_based)', 'train_data_no_head_outer_corner_Ar.csv')
-csv_file_path_test = os.path.join(current_directory, 'trained_model_Ar_weighted_tuned_JAN25(v02_physics_based)', 'test_data_no_head_outer_corner_Ar.csv')
-dataset = MergedDataset(csv_file_path_train)
-dataset_test = MergedDatasetTest(csv_file_path_test)
+csv_file_path_train = os.path.join(current_directory, 'trained_model_O2_weighted_tuned_JAN25(v02_physics_based)', 'train_data_no_head_outer_corner_O2.csv')
+csv_file_path_test = os.path.join(current_directory, 'trained_model_O2_weighted_tuned_JAN25(v02_physics_based)', 'test_data_no_head_outer_corner_O2.csv')
+statsjson = 'overall_min_max.json'
+dataset = MergedDataset(csv_file_path_train, statsjson)
+dataset_test = MergedDatasetTest(csv_file_path_test, statsjson)
 # Set the sizes for training, validation, and  testing
 train_size = int(0.8 * len(dataset))  # 80% for training
 val_size = len(dataset) - train_size    # 20% for validation
@@ -68,7 +69,7 @@ results = {
 print(json.dumps(results, indent=4))
 
 # Save results to a JSON file
-output_file = "optuna_results_weighted_mse_rand_outputs.json"
+output_file = "optuna_results_3_layers_M1_outputs.json"
 with open(output_file, "w") as f:
     json.dump(results, f, indent=4)
 

@@ -8,7 +8,7 @@ from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 from torch.utils.data import Dataset
 import json
-
+import time
 # Device setup (CUDA or CPU)
 def setup_device():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -148,6 +148,7 @@ def test_model(model, test_loader, criterion, device):
     mse_values = []
     all_predictions, all_targets = [], []
     with torch.no_grad():
+        start_time = time.time()
         for inputs, targets in test_loader:
             inputs, targets = inputs.to(device), targets.to(device)
             outputst = model(inputs)
@@ -170,7 +171,9 @@ def test_model(model, test_loader, criterion, device):
 
             mean_r2 = np.mean(r2_values)
             mean_mse = np.mean(mse_values)
+        end_time = time.time()
 
+    elapsed_time = end_time - start_time
     all_predictions = np.concatenate(all_predictions, axis=0)
     all_targets = np.concatenate(all_targets, axis=0)
     # Exclude the 9th and 10th output columns (index 8 and 9)
@@ -187,7 +190,7 @@ def test_model(model, test_loader, criterion, device):
     print(f"  Mean MAE: {overall_mae:.7f}")
     print(f"  Mean R²: {overall_r2:.5f}")
     test_loss /= len(test_loader.dataset)
-    return test_loss, all_predictions, all_targets, r2_values
+    return test_loss, all_predictions, all_targets, r2_values, elapsed_time
 
 
 class Model(nn.Module):

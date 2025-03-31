@@ -54,19 +54,19 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
     print(f"Number of trainable parameters: {num_trainable_params}")
 
     for epoch in range(num_epochs):
-        #uncomment these lines when doing gradually unfreezing
-        # if epoch == 200:
+        # uncomment these lines when doing gradually unfreezing
+        # if epoch == 100:
         #     #unfreeze the frozen layer
-        #     for param in model.layers[1].parameters():
+        #     # for param in model.layers[1].parameters():
+        #     #     param.requires_grad = True
+        #     for param in model.layers[2].parameters():
         #         param.requires_grad = True
-        # #     for param in model.layers[2].parameters():
-        # #         param.requires_grad = True
-        # #     print(f"First layer unfrozen at epoch {epoch}")
-        # #
-            # Reduce learning rate when unfreezing
-            # for param_group in optimizer.param_groups:
-            #     param_group['lr'] *= 0.5  # Adjust as needed
-            # print(f"Learning rate adjusted to {optimizer.param_groups[0]['lr']:.6e}")
+        #     print(f"layer unfrozen at epoch {epoch}")
+        #
+        #     # Reduce learning rate when unfreezing
+        #     for param_group in optimizer.param_groups:
+        #         param_group['lr'] *= 0.5  # Adjust as needed
+        #     print(f"Learning rate adjusted to {optimizer.param_groups[0]['lr']:.6e}")
 
         model.train()  # Make model into training mode
         train_loss = 0

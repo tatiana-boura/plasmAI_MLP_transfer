@@ -16,16 +16,17 @@ current_directory = os.path.dirname(os.path.realpath(__file__))
 csv_file_path_test = os.path.join(current_directory,'trained_model_Ar_weighted_tuned_JAN25(v02_physics_based)', 'test_data_no_head_outer_corner_Ar.csv')
 # csv_file_path_test = os.path.join(current_directory, 'split_data_tests', 'argon02', 'test_Ar_subset_80.csv' )
 #save paths for graphs that needed for transfer learning
-save_path1 = os.path.join(current_directory, 'transfer_learning_graphs', 'M22_80', 'R2.png')
-save_path2 = os.path.join(current_directory, 'transfer_learning_graphs', 'M22_80', 'residuals.png')
-neural_network = 'M22_80_trained_model_Ar_with_Ar_minmax.pth'
+folder = 'M12_trained_model2_O2_with_Ar_data_minmax_3_layers_fine_tuned'
+save_path1 = os.path.join(current_directory, 'transfer_learning_graphs', folder, 'R2.png')
+save_path2 = os.path.join(current_directory, 'transfer_learning_graphs', folder, 'residuals.png')
+neural_network = 'M12_trained_model2_O2_with_Ar_data_minmax_3_layers_fine_tuned.pth'
 
 h1_val = 10
 layers = 3
-batch = 32
+batch = 128
 xlim = 100
 statsjson = 'overall_min_max.json'#os.path.join(current_directory,'trained_model_Ar_weighted_tuned_JAN25(v02_physics_based)','column_statsAr.json') #also change the stats file at the MergedDatasetTest
-name_of_predictions = 'predictions.csv' #csv file for unscaled predictions to be saved
+name_of_predictions = '3predictions.csv' #csv file for unscaled predictions to be saved
 #make the calculations at the test set
 device = setup_device()
 basic_model = Model_dynamic(h1=h1_val, num_layers=layers, freeze_layers=[])
@@ -35,12 +36,12 @@ basic_model.load_state_dict(torch.load(neural_network)) #trained_model1_O2_weigh
 trained_model = basic_model
 criterion = calculate_weighted_mse(reduction='mean') #nn.SmoothL1Loss() #calculate_huber_loss #
 # Evaluate on the test set
-test_loss, all_predictions, all_targets, r22 = test_model(model=trained_model,
+test_loss, all_predictions, all_targets, r22, elapsed_time = test_model(model=trained_model,
                                                      test_loader=test_loader,
                                                      criterion=criterion,
                                                      device=device)
 print(f"mean test loss: {test_loss:.4f}")
-
+print(f"Time taken for evaluation: {elapsed_time:.5f} seconds")
 with open(statsjson, 'r') as f:
     scaling_info = json.load(f)
 output_columns_names = list(scaling_info.keys())

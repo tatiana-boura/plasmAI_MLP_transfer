@@ -14,11 +14,11 @@ set_seed(seed_num)
 device = setup_device()
 current_directory = os.path.dirname(os.path.realpath(__file__))
 
-# csv_file_path_train = os.path.join(current_directory, 'trained_model_O2_weighted_tuned_JAN25(v02_physics_based)', 'train_data_no_head_outer_corner_O2.csv')
-csv_file_path_train = os.path.join(current_directory, 'split_data_tests', 'argon02', 'train_Ar_subset_80.csv' )
+# csv_file_path_train = os.path.join(current_directory, 'trained_model_Ar_weighted_tuned_JAN25(v02_physics_based)', 'train_data_no_head_outer_corner_Ar.csv')
+csv_file_path_train = os.path.join(current_directory, 'split_data_tests', 'argon02', 'train_Ar_subset_25.csv' )
 statsjson = 'overall_min_max.json'
-model_save_path = 'M22_80_trained_model_Ar_with_Ar_minmax.pth'
-neural_network = 'M2_trained_model2_Ar_with_Ar_data_minmax.pth' #'trained_model1_O2_optim_weightedJAN25.pth' #load the pretrained model
+model_save_path = 'M12_trained_model2_O2_with_Ar_data_minmax_3_layers_fine_tuned.pth'
+neural_network = 'M1_trained_model2_O2_with_O2_data_minmax_3_layers.pth' #'trained_model1_O2_optim_weightedJAN25.pth' #load the pretrained model
 #insert the architecture of the neural_network
 h1_val = 10
 layers = 3
@@ -42,10 +42,9 @@ val_loader = DataLoader(val_dataset, batch_size=batch, shuffle=True)
 # create an instance for the model
 model = Model_dynamic(h1=h1_val, num_layers=layers, freeze_layers=[]) #change this also to the train_regression_model
 criterion = calculate_weighted_mse(reduction='mean')
-# model.load_state_dict(torch.load(neural_network)) #TO CONTINUE TRAINING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-optimizer = torch.optim.Adam(model.parameters(), lr=(0.0029389095728573683), weight_decay=1.737720320769069e-06)
+model.load_state_dict(torch.load(neural_network)) #TO CONTINUE TRAINING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+optimizer = torch.optim.Adam(model.parameters(), lr=(0.0029389095728573683/20), weight_decay=1.737720320769069e-06)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.1)
-#basic_model.load_state_dict(torch.load('trained_model1_O2.pth'))
 epochs = 700
 start_time = time.time()
 trained_model, losses, val_losses, r2_mean = train_regression_model(model=model,
