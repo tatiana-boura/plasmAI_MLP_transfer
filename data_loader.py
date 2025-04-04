@@ -55,22 +55,6 @@ class MergedDatasetTest(Dataset):
     def __len__(self):
         return self.X.shape[0]
 
-class testdataset_unormalized(Dataset):
-    def __init__(self):
-        df = pd.read_csv('train_data_no_head_outer_corner.csv', sep=';')
-        X_columns = ['Power', 'Pressure']  # features
-        y_columns = [col for col in df.columns if col not in X_columns]  # To be predicted
-        self.X, self.y = df[X_columns], df[y_columns]
-
-        self.df = df
-
-    def __getitem__(self, index):
-        X = self.X.iloc[index, :].values
-        y = self.y.iloc[index, :].values
-        return torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
-
-    def __len__(self):
-        return self.X.shape[0]
 
 def unscale_min_max(data, column_names, scaling_info):
     unscaled_data = data
