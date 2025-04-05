@@ -3,9 +3,11 @@ import torch
 
 class WeightedMSE:
 
-    def __init__(self, reduction, device):
+    def __init__(self, reduction, outputs_points, device):
         self.reduction = reduction
+        outputs_idx = [point-1 for point in outputs_points]
         self.weights = torch.tensor([2, 2, 2, 2, 1, 0.8, 0.5, 0.5, 0.1, 0.1]).to(device)
+        self.weights = self.weights[outputs_idx]
 
     def __call__(self, input, target):
 
@@ -18,18 +20,3 @@ class WeightedMSE:
         else:
             return squared_error
 
-
-class HuberLoss:
-    def __init__(self, delta: float = 1.0):
-        self.delta = delta
-
-    def forward(self, y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
-        # Compute the absolute error
-        error = torch.abs(y_true - y_pred)
-
-        # Calculate Huber loss based on the threshold delta
-        loss = torch.where(error <= self.delta,
-                           0.5 * error ** 2,  # Squared loss
-                           self.delta * (error - 0.5 * self.delta))  # Absolute loss
-
-        return loss.mean()

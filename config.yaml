@@ -1,0 +1,12 @@
+Ar:
+  lr: 0.0009620551638036177
+  batch_size: 64 #128
+  weight_decay: 2.0550345637540963e-05
+
+nn_arch:
+  neurons_per_layer: 10
+  layers: 3
+
+training:
+  epochs: 700
+  patience: 20

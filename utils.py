@@ -25,7 +25,8 @@ def set_seed(seed):
 
 
 def train_regression_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device, patience,
-                           scheduler, dir_path, verbose=False, unfreeze_layers=False, layers_to_unfreeze=[2]):
+                           scheduler, dir_path, outputs_idx_str, verbose=False,
+                           unfreeze_layers=False, layers_to_unfreeze=[]):
     model.to(device)
 
     train_losses, val_losses = [], []
@@ -103,7 +104,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
         df_val = pd.DataFrame(np.hstack((all_predictions, all_targets)), columns=pred_columns + target_columns)
 
         # Save CSV file
-        df_val.to_csv(f'{dir_path}/val_set_results_baseline.csv', index=False, sep=';')
+        df_val.to_csv(f'{dir_path}/val_set_results_{outputs_idx_str}.csv', index=False, sep=';')
 
         val_loss /= len(val_loader.dataset)
         val_losses.append(val_loss)
@@ -139,7 +140,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                 model.load_state_dict(best_model_state)
                 break
 
-    return model, train_losses, val_losses, mean_r2
+    return model, train_losses, val_losses
 
 
 def test_model(model, test_loader, criterion, device):
