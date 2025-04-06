@@ -24,20 +24,29 @@ config_Ar = config[gas]
 config_arch = config['nn_arch']
 config_train = config['training']
 
-outputs_points = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
+outputs_points = [i+1 for i in range(0, 10)]
+'''
 saved_model_path = None
 
+# Train for each output individually to obtain the 'geometry layer'
 for i, outputs_point in enumerate(outputs_points):
 
     print(f'Training output point {outputs_point}')
 
-    freeze_layers = [] if i == 0 else [0, 1, 2]
+    freeze_layers = [] if i == 0 else [0, 1]
 
-    saved_model_path = train(gas=gas, outputs_points=[outputs_point], freeze_layers=freeze_layers,
+    saved_model_path = train(gas=gas, outputs_points=[outputs_point], freeze_layers=freeze_layers, geometry_layer=False,
                              model_pth=saved_model_path, config_gas=config_Ar, config_arch=config_arch,
-                             config_train=config_train, device=device, dir_path=dir_path)
+                             config_train=config_train, device=device, dir_path=dir_path)'''
 
+saved_model_path = f"{dir_path}/trained_model_10.pth"
+print(saved_model_path)
 
-'''test(gas=gas, config_arch=config_arch, outputs_points=outputs_points, freeze_layers=freeze_layers,
-     dir_path=dir_path, trained_pth=saved_model_path, device=device)'''
+saved_model_path = train(gas=gas, outputs_points=outputs_points, freeze_layers=[2], geometry_layer=True,
+                         model_pth=saved_model_path, config_gas=config_Ar, config_arch=config_arch,
+                         config_train=config_train, device=device, dir_path=dir_path)
+
+saved_model_path = f"{dir_path}/trained_model_1_2_3_4_5_6_7_8_9_10.pth"
+
+test(gas=gas, config_arch=config_arch, outputs_points=outputs_points, freeze_layers=[],
+     dir_path=dir_path, trained_pth=saved_model_path, device=device)

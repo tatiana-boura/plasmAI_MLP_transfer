@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split, Subset
+import torch.nn as nn
 import time
 import matplotlib.pyplot as plt
 
@@ -11,7 +12,7 @@ from utils import train_regression_model
 
 
 def train(gas, config_gas, config_arch, config_train, outputs_points, freeze_layers, dir_path, model_pth,
-          device, verbose=False):
+          device, geometry_layer, verbose=False):
 
     csv_file_path_train = f'./data/train_data_no_head_outer_corner_{gas}.csv'
     dataset = MergedDataset(csv_file_path_train, stats_file="stats_min_max.json", columns_idx=outputs_points)
@@ -38,12 +39,16 @@ def train(gas, config_gas, config_arch, config_train, outputs_points, freeze_lay
     train_loader = DataLoader(train_dataset, batch_size=batch, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch, shuffle=False)
 
-    model = Model(h1=neurons_per_layer, num_layers=layers, freeze_layers=freeze_layers, output_size=len(outputs_points))
+    output_size = 1 if geometry_layer else len(outputs_points)
+    model = Model(h1=neurons_per_layer, num_layers=layers, freeze_layers=freeze_layers, output_size=output_size)
 
     if model_pth:
         model.load_state_dict(torch.load(model_pth))
         lr /= 20
         print("Loaded pre-trained model and adjusted learning rate.")
+
+    if geometry_layer:
+        model.out = nn.Linear(neurons_per_layer, 10)
 
     criterion = WeightedMSE(reduction='mean', outputs_points=outputs_points, device=device)
 
