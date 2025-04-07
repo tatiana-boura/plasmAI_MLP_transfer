@@ -9,10 +9,10 @@ from sklearn.metrics import r2_score
 
 from loss import WeightedMSE
 from utils import test_model
-from model import Model
+from model import Model, CombinedModel
 
 
-def test(gas, config_arch, outputs_points, freeze_layers, dir_path, trained_pth, device):
+def test(gas, config_arch, outputs_points, freeze_layers, dir_path, trained_pth, geometry_layer, device):
 
     csv_file_path_test = f'data/test_data_no_head_outer_corner_{gas}.csv'
 
@@ -24,9 +24,22 @@ def test(gas, config_arch, outputs_points, freeze_layers, dir_path, trained_pth,
     dataset_test = MergedDataset(csv_file=csv_file_path_test, stats_file=stats_json, columns_idx=outputs_points)
     test_loader = DataLoader(dataset_test, batch_size=len(dataset_test), shuffle=False)
 
-    trained_model = Model(h1=neurons_per_layer, num_layers=layers,
-                          freeze_layers=freeze_layers, output_size=len(outputs_points))
-    trained_model.load_state_dict(torch.load(trained_pth))
+    if geometry_layer:
+        pretrained_models = []
+
+        for model_idx in outputs_points:
+            model_i = Model(h1=neurons_per_layer, num_layers=layers, freeze_layers=[], output_size=1)
+            model_i.load_state_dict(torch.load(f'{dir_path}/trained_model_{model_idx}.pth'))
+            pretrained_models.append(model_i)
+
+        trained_model = CombinedModel(h1=neurons_per_layer, num_layers=layers, pretrained_models=pretrained_models)
+        trained_model.load_state_dict(torch.load(trained_pth))
+
+    else:
+        trained_model = Model(h1=neurons_per_layer, num_layers=layers,
+                              freeze_layers=freeze_layers, output_size=len(outputs_points))
+        trained_model.load_state_dict(torch.load(trained_pth))
+
 
     criterion = WeightedMSE(reduction='mean', outputs_points=outputs_points, device=device)
 

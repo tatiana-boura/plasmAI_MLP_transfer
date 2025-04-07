@@ -6,7 +6,7 @@ import time
 import matplotlib.pyplot as plt
 
 from data_loader import MergedDataset
-from model import Model
+from model import Model, CombinedModel
 from loss import WeightedMSE
 from utils import train_regression_model
 
@@ -39,16 +39,25 @@ def train(gas, config_gas, config_arch, config_train, outputs_points, freeze_lay
     train_loader = DataLoader(train_dataset, batch_size=batch, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch, shuffle=False)
 
-    output_size = 1 if geometry_layer else len(outputs_points)
-    model = Model(h1=neurons_per_layer, num_layers=layers, freeze_layers=freeze_layers, output_size=output_size)
+    if geometry_layer:
+        pretrained_models = []
 
-    if model_pth:
+        for model_idx in outputs_points:
+            model_i = Model(h1=neurons_per_layer, num_layers=layers, freeze_layers=[], output_size=1)
+            model_i.load_state_dict(torch.load(f'{dir_path}/trained_model_{model_idx}.pth'))
+            pretrained_models.append(model_i)
+
+        model = CombinedModel(h1=neurons_per_layer, num_layers=layers, pretrained_models=pretrained_models)
+    else:
+        model = Model(h1=neurons_per_layer,
+                      num_layers=layers,
+                      freeze_layers=freeze_layers,
+                      output_size=len(outputs_points))
+
+    if model_pth and not geometry_layer:
         model.load_state_dict(torch.load(model_pth))
         lr /= 20
         print("Loaded pre-trained model and adjusted learning rate.")
-
-    if geometry_layer:
-        model.out = nn.Linear(neurons_per_layer, 10)
 
     criterion = WeightedMSE(reduction='mean', outputs_points=outputs_points, device=device)
 
