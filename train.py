@@ -30,11 +30,11 @@ def train(gas, config_gas, config_arch, config_train, outputs_points, freeze_lay
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
 
-    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+    # train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
-    '''# Split the dataset not randomly, keep the same sets everytime
+    # Split the dataset not randomly, keep the same sets everytime
     train_dataset = Subset(dataset, range(0, train_size))
-    val_dataset = Subset(dataset, range(train_size, len(dataset)))'''
+    val_dataset = Subset(dataset, range(train_size, len(dataset)))
 
     train_loader = DataLoader(train_dataset, batch_size=batch, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch, shuffle=False)
@@ -56,8 +56,9 @@ def train(gas, config_gas, config_arch, config_train, outputs_points, freeze_lay
 
     if model_pth and not geometry_layer:
         model.load_state_dict(torch.load(model_pth))
+        print("Loaded pre-trained model.")
         lr /= 20
-        print("Loaded pre-trained model and adjusted learning rate.")
+        print("Adjusted learning rate.")
 
     criterion = WeightedMSE(reduction='mean', outputs_points=outputs_points, device=device)
 
@@ -77,7 +78,8 @@ def train(gas, config_gas, config_arch, config_train, outputs_points, freeze_lay
                                                                patience=patience,
                                                                scheduler=scheduler,
                                                                dir_path=dir_path,
-                                                               outputs_idx_str=outputs_idx_str)
+                                                               outputs_idx_str=outputs_idx_str,
+                                                               unfreeze_layers=True)
     end_time = time.time()
 
     model_save_path = f'{dir_path}/trained_model_{outputs_idx_str}.pth'

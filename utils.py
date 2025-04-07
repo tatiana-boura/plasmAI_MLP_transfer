@@ -41,8 +41,12 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
 
         if epoch == 100:
             if unfreeze_layers:
-                for layer_idx in layers_to_unfreeze:
+                '''for layer_idx in layers_to_unfreeze:
                     for param in model.layers[layer_idx].parameters():
+                        param.requires_grad = True'''
+
+                for layer in model.pretrained_layers:
+                    for param in layer.parameters():
                         param.requires_grad = True
 
                 # Reduce learning rate when unfreezing

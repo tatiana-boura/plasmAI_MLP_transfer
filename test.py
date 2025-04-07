@@ -40,13 +40,12 @@ def test(gas, config_arch, outputs_points, freeze_layers, dir_path, trained_pth,
                               freeze_layers=freeze_layers, output_size=len(outputs_points))
         trained_model.load_state_dict(torch.load(trained_pth))
 
-
     criterion = WeightedMSE(reduction='mean', outputs_points=outputs_points, device=device)
 
-    test_loss, all_predictions, all_targets, r22, _ = test_model(model=trained_model,
-                                                                 test_loader=test_loader,
-                                                                 criterion=criterion,
-                                                                 device=device)
+    test_loss, all_predictions, all_targets, _, _ = test_model(model=trained_model,
+                                                               test_loader=test_loader,
+                                                               criterion=criterion,
+                                                               device=device)
     print(f"Mean test loss: {test_loss:.4f}")
 
     with open(stats_json, 'r') as f:
