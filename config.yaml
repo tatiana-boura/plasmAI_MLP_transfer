@@ -5,7 +5,12 @@ Ar:
 
 O2:
   lr: 0.0029389095728573683
-  batch_size: 8 #16 for baseline, 8 for tuned
+  batch_size: 8
+  weight_decay: 1.737720320769069e-06
+
+O2_init:
+  lr: 0.0029389095728573683
+  batch_size: 16 #32
   weight_decay: 1.737720320769069e-06
 
 nn_arch:
@@ -14,4 +19,4 @@ nn_arch:
 
 training:
   epochs: 700
-  patience: 20
+  patience: 70 #20

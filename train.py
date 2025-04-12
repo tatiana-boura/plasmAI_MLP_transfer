@@ -12,7 +12,7 @@ from utils import train_regression_model
 
 
 def train(gas, config_gas, config_arch, config_train, outputs_points, freeze_layers, dir_path, model_pth,
-          device, geometry_layer, verbose=False):
+          device, geometry_layer, unfreeze_layers, layers_to_unfreeze, verbose=False):
 
     csv_file_path_train = f'./data/train_data_no_head_outer_corner_{gas}.csv'
     dataset = MergedDataset(csv_file_path_train, stats_file="stats_min_max.json", columns_idx=outputs_points)
@@ -68,18 +68,20 @@ def train(gas, config_gas, config_arch, config_train, outputs_points, freeze_lay
     outputs_idx_str = '_'.join(map(str, outputs_points))
 
     start_time = time.time()
-    trained_model, losses, val_losses = train_regression_model(model=model,
-                                                               train_loader=train_loader,
-                                                               val_loader=val_loader,
-                                                               criterion=criterion,
-                                                               optimizer=optimizer,
-                                                               num_epochs=epochs,
-                                                               device=device,
-                                                               patience=patience,
-                                                               scheduler=scheduler,
-                                                               dir_path=dir_path,
-                                                               outputs_idx_str=outputs_idx_str,
-                                                               unfreeze_layers=True)
+    trained_model, losses, val_losses, mean_r2_scores = train_regression_model(model=model,
+                                                                               train_loader=train_loader,
+                                                                               val_loader=val_loader,
+                                                                               criterion=criterion,
+                                                                               optimizer=optimizer,
+                                                                               num_epochs=epochs,
+                                                                               device=device,
+                                                                               patience=patience,
+                                                                               scheduler=scheduler,
+                                                                               dir_path=dir_path,
+                                                                               outputs_idx_str=outputs_idx_str,
+                                                                               unfreeze_layers=unfreeze_layers,
+                                                                               layers_to_unfreeze=layers_to_unfreeze,
+                                                                               geometry_layer=geometry_layer)
     end_time = time.time()
 
     model_save_path = f'{dir_path}/trained_model_{outputs_idx_str}.pth'
@@ -97,4 +99,4 @@ def train(gas, config_gas, config_arch, config_train, outputs_points, freeze_lay
         plt.tick_params(axis='both', which='major')
         plt.show()
 
-    return model_save_path
+    return model_save_path, max(mean_r2_scores)

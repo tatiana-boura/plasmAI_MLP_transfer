@@ -25,8 +25,8 @@ def set_seed(seed):
 
 
 def train_regression_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device, patience,
-                           scheduler, dir_path, outputs_idx_str, verbose=False,
-                           unfreeze_layers=False, layers_to_unfreeze=[]):
+                           scheduler, dir_path, outputs_idx_str, unfreeze_layers, layers_to_unfreeze, geometry_layer,
+                           verbose=False):
     model.to(device)
 
     train_losses, val_losses = [], []
@@ -41,12 +41,17 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
 
         if epoch == 100:
             if unfreeze_layers:
-                '''for layer_idx in layers_to_unfreeze:
-                    for param in model.layers[layer_idx].parameters():
-                        param.requires_grad = True'''
 
-                for layer in model.pretrained_layers:
-                    for param in layer.parameters():
+                if not geometry_layer:
+                    for layer_idx in layers_to_unfreeze:
+                        for param in model.layers[layer_idx].parameters():
+                            param.requires_grad = True
+                else:
+                    for layer in model.pretrained_layers:
+                        for param in layer.parameters():
+                            param.requires_grad = True
+
+                    for param in model.layers[-1].parameters():
                         param.requires_grad = True
 
                 # Reduce learning rate when unfreezing
@@ -144,7 +149,7 @@ def train_regression_model(model, train_loader, val_loader, criterion, optimizer
                 model.load_state_dict(best_model_state)
                 break
 
-    return model, train_losses, val_losses
+    return model, train_losses, val_losses, mean_r2_scores
 
 
 def test_model(model, test_loader, criterion, device):

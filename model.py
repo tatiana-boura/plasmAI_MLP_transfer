@@ -49,10 +49,12 @@ class CombinedModel(nn.Module):
         for _ in range(num_layers - 1):
             self.layers.append(nn.Linear(h1, h1))
 
-        '''self.layers[-1] = pretrained_models[0].layers[-1]
+        self.layers[2] = pretrained_models[6].layers[2]
 
-        for param in self.layers[-1].parameters():
-            param.requires_grad = False'''
+        #self.layers = pretrained_models[-1].layers
+
+        for param in self.layers[2].parameters():
+            param.requires_grad = False
 
         # Freeze the last layer from each pre-trained model
         self.pretrained_layers = nn.ModuleList(
