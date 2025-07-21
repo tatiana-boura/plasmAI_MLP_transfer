@@ -6,6 +6,7 @@ import json
 import pandas as pd
 import seaborn as sns
 from sklearn.metrics import r2_score
+import yaml
 
 from loss import WeightedMSE
 from utils import setup_device, test_model
@@ -14,7 +15,7 @@ import os
 
 device = setup_device()
 
-gas = 'Ar'
+gas = 'O2'
 training_type = 'baseline'  # baseline, fine_tune, freeze
 
 dir_path = f'./{gas}/{training_type}'
@@ -24,9 +25,12 @@ current_directory = os.path.dirname(os.path.realpath(__file__))
 csv_file_path_test = f'data/test_data_no_head_outer_corner_{gas}.csv'
 trained_pth = f'{dir_path}/trained_model.pth'
 
-h1_val = 10
-layers = 3
+# Open .yaml file to get configuration
+with open('./config.yaml', 'r') as f:
+    config = yaml.load(f, Loader=yaml.FullLoader)
 
+h1_val = config['nn_arch']['neurons_per_layer']
+layers = config['nn_arch']['layers']
 stats_json = 'stats_min_max.json'
 
 dataset_test = MergedDatasetTest(csv_file_path_test, stats_json)

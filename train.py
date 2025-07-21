@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data import random_split, Subset
 import time
 import os
+import yaml
 import matplotlib.pyplot as plt
 
 from data_loader import MergedDataset
@@ -17,7 +18,11 @@ current_directory = os.path.dirname(os.path.realpath(__file__))
 seed_num = 41
 set_seed(seed_num)
 
-gas = 'Ar'
+# Open .yaml file to get configuration
+with open('./config.yaml', 'r') as f:
+    config = yaml.load(f, Loader=yaml.FullLoader)
+
+gas = 'O2'
 training_type = 'baseline'  # baseline, fine_tune, freeze
 
 dir_path = f'./{gas}/{training_type}'
@@ -27,13 +32,13 @@ csv_file_path_train = f'./data/train_data_no_head_outer_corner_{gas}.csv'
 dataset = MergedDataset(csv_file_path_train, statsfile="stats_min_max.json")
 
 
-neurons_per_layer = 10
-layers = 3
-batch = 128  # 64
-lr = 0.0009620551638036177
-weight_decay = 2.0550345637540963e-05
-epochs = 700
-patience = 20
+neurons_per_layer = config['nn_arch']['neurons_per_layer']
+layers = config['nn_arch']['layers']
+batch = config[gas]['batch_size'] 
+lr = config[gas]['lr'] 
+weight_decay = config[gas]['weight_decay'] 
+epochs = config['training']['epochs'] 
+patience = config['training']['patience'] 
 
 train_size = int(0.8 * len(dataset))
 val_size = len(dataset) - train_size
