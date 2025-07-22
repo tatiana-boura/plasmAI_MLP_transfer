@@ -11,7 +11,6 @@ from model import Model
 from loss import WeightedMSE
 from utils import setup_device, set_seed, train_regression_model
 
-
 device = setup_device()
 current_directory = os.path.dirname(os.path.realpath(__file__))
 
@@ -43,11 +42,11 @@ patience = config['training']['patience']
 train_size = int(0.8 * len(dataset))
 val_size = len(dataset) - train_size
 
-train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+#train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
-'''# Split the dataset not randomly, keep the same sets everytime
+# Split the dataset not randomly, keep the same sets everytime
 train_dataset = Subset(dataset, range(0, train_size))
-val_dataset = Subset(dataset, range(train_size, len(dataset)))'''
+val_dataset = Subset(dataset, range(train_size, len(dataset)))
 
 train_loader = DataLoader(train_dataset, batch_size=batch, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=batch, shuffle=True)
