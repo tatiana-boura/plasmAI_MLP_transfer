@@ -1,7 +1,35 @@
 import torch
 import json
 from torch.utils.data import Dataset
+from sklearn.preprocessing import MinMaxScaler
+import joblib
 import pandas as pd
+
+class MixtureDataset(Dataset):
+    def __init__(self, df, set_type):
+        
+        input_cols = ['Power', 'Pressure', 'xAr']
+        X = df[input_cols].to_numpy()
+        Y = df[[col for col in df.columns if col not in input_cols]].to_numpy()
+
+        scaler_pth = "./data/scaler_mixture.pkl"
+
+        if set_type == "train":
+            scaler = MinMaxScaler()
+            X = scaler.fit_transform(X)
+            joblib.dump(scaler, scaler_pth)
+        else:
+            scaler = joblib.load(scaler_pth)
+            X = scaler.transform(X)
+
+        self.X = torch.tensor(X, dtype=torch.float32)
+        self.Y = torch.tensor(Y, dtype=torch.float32)
+
+    def __getitem__(self, idx):
+        return self.X[idx, :], self.Y[idx, :]
+
+    def __len__(self):
+        return self.X.shape[0]
 
 
 class MergedDataset(Dataset):

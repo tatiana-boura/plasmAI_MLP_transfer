@@ -180,7 +180,7 @@ def test_model(model, test_loader, criterion, device):
     overall_mae = mean_absolute_error(all_targets, all_predictions)
     overall_r2 = r2_score(all_targets, all_predictions)
 
-    print(f"\nOverall Performance Metrics:")
+    print(f"Overall Performance Metrics:")
     print(f"  Mean MSE: {overall_mse:.7f}")
     print(f"  Mean MAE: {overall_mae:.7f}")
     print(f"  Mean R²: {overall_r2:.5f}")

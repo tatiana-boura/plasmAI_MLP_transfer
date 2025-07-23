@@ -3,20 +3,22 @@ import torch.nn.functional as F
 
 
 class Model(nn.Module):
-    def __init__(self, h1, num_layers, freeze_layers=[]):
+    def __init__(self, h1, num_layers, input_size=2, output_size=10, freeze_layers=[]):
         super().__init__()
         self.num_layers = num_layers
         self.layers = nn.ModuleList()  # List to hold layers
+        self.input_size = input_size
+        self.output_size = output_size
 
         # First layer
-        self.layers.append(nn.Linear(2, h1))
+        self.layers.append(nn.Linear(self.input_size, h1))
 
         # Add hidden layers
         for _ in range(num_layers - 1):
             self.layers.append(nn.Linear(h1, h1))  # Each hidden layer has h1 neurons
 
         # Output layer
-        self.out = nn.Linear(h1, 10)
+        self.out = nn.Linear(h1, self.output_size)
 
         # Freeze selected layers
         for layer_idx in freeze_layers:
