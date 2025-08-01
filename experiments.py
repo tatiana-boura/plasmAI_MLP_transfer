@@ -39,25 +39,30 @@ if data_type == "single":
 elif data_type == "mixture":
 
     gas = 'mixture'
-
+    test_by = 'power'
+    # test_by = 'percentage'
 
     dir_path = f'./{gas}'
     os.makedirs(dir_path, exist_ok=True)
 
-
     # Load CSV
     df = pd.read_csv("./data/mixture_O2_Ar_dataset.csv", sep=';')
 
-    # Split the testing data according to precentage xAr
-    test_df = df[df['xAr'] > 0.8].copy()
-    train_df = df[df['xAr'] <= 0.8].copy()
+    if test_by == "percentage":
+        test_df = df[df['xAr'] < 0.3].copy()
+        train_df = df[df['xAr'] >= 0.3].copy()
+    else:
+        power_percentile = df["Power"].quantile(0.85)
+        pressure_percentile = df["Pressure"].quantile(0.85)
+        test_df = df[(df['Power'] >= power_percentile) & (df['Pressure'] >= pressure_percentile)].copy()
+        train_df = df[(df['Power'] < power_percentile) & (df['Pressure'] < pressure_percentile)].copy()
 
     print(f"Mixture of gases.")
 
-    '''print(f'\nTraining:\n')
-                train_mixture(train_df=train_df, gas=gas, config=config, dir_path=dir_path, device=device, verbose=False)'''
+    print(f'\nTraining:\n')
+    train_mixture(train_df=train_df, gas=gas, config=config, dir_path=dir_path, device=device, test_by=test_by, verbose=False)
     print(f'\nEvaluation:\n')
-    test_mixture(test_df=test_df, gas=gas, config=config, dir_path=dir_path, device=device, verbose=False)
+    test_mixture(test_df=test_df, gas=gas, config=config, dir_path=dir_path, device=device, test_by=test_by, verbose=False)
     
 
 else:

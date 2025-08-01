@@ -11,7 +11,7 @@ from scripts.loss import WeightedMSE
 from scripts.utils import train_regression_model
 
 
-def train_mixture(train_df, gas, config, dir_path, device, verbose=False):
+def train_mixture(train_df, gas, config, dir_path, device, test_by, verbose=False):
 
     dataset = MixtureDataset(train_df, set_type="train")
 
@@ -54,7 +54,7 @@ def train_mixture(train_df, gas, config, dir_path, device, verbose=False):
                                                                         scheduler=scheduler,
                                                                         dir_path=dir_path)
     end_time = time.time()
-    model_save_path = f'{dir_path}/trained_model.pth'
+    model_save_path = f'{dir_path}/trained_model_{test_by}.pth'
     torch.save(trained_model.state_dict(), model_save_path)
     print(f"model saved to {model_save_path}")
     print(f"time for training: {(end_time-start_time):.4f}")
@@ -66,7 +66,7 @@ def train_mixture(train_df, gas, config, dir_path, device, verbose=False):
     plt.title("Training & Validation Loss Progression")
     plt.legend()
     plt.tick_params(axis='both', which='major')
-    plt.savefig(f"{dir_path}/loss_progression.png", dpi=600, bbox_inches='tight')
+    plt.savefig(f"{dir_path}/loss_progression_{test_by}.png", dpi=600, bbox_inches='tight')
     if verbose:
         plt.show()
 

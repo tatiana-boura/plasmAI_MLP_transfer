@@ -13,9 +13,9 @@ from scripts.model import Model
 import os
 
 
-def test_mixture(test_df, gas, config, dir_path, device, verbose=False):
+def test_mixture(test_df, gas, config, dir_path, device, test_by, verbose=False):
 
-    trained_pth = f'{dir_path}/trained_model.pth'
+    trained_pth = f'{dir_path}/trained_model_{test_by}.pth'
 
     neurons_per_layer = config['mixture_nn_arch']['neurons_per_layer']
     layers = config['mixture_nn_arch']['layers']
@@ -39,7 +39,7 @@ def test_mixture(test_df, gas, config, dir_path, device, verbose=False):
     output_columns_names = [col for col in test_df.columns if col not in input_columns]
 
     predictions_df = pd.DataFrame(all_predictions, columns=output_columns_names)
-    predictions_df_csv = f'{dir_path}/pred.csv'
+    predictions_df_csv = f'{dir_path}/pred_{test_by}.csv'
     predictions_df.to_csv(predictions_df_csv, index=False, sep=';')
 
     model_predictions = pd.read_csv(predictions_df_csv, sep=';')
@@ -61,7 +61,7 @@ def test_mixture(test_df, gas, config, dir_path, device, verbose=False):
     plt.xticks(list(range(1, len(r2_scores) + 1)))
     plt.tight_layout()
     plt.tick_params(axis='both', which='major')
-    plt.savefig(f"{dir_path}/r2.png", dpi=600, bbox_inches='tight')
+    plt.savefig(f"{dir_path}/r2_{test_by}.png", dpi=600, bbox_inches='tight')
     if verbose:
         plt.show()
 
@@ -79,7 +79,7 @@ def test_mixture(test_df, gas, config, dir_path, device, verbose=False):
     plt.ylabel('Frequency')
     plt.xlim(-1, 100)    # Set the x-axis to extend to 15%
     plt.tick_params(axis='both', which='major')
-    plt.savefig(f"{dir_path}/residuals.png", dpi=600, bbox_inches='tight')
+    plt.savefig(f"{dir_path}/residuals_{test_by}.png", dpi=600, bbox_inches='tight')
     if verbose:
         plt.show()
 
