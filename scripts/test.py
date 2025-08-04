@@ -9,8 +9,91 @@ from sklearn.metrics import r2_score
 from scripts.data_loader import MergedDatasetTest, MixtureDataset, unscale_min_max
 from scripts.loss import WeightedMSE
 from scripts.utils import test_model
-from scripts.model import Model
+from scripts.model import Model, MixtureGNN, MixtureEtchModel
 import os
+
+
+def test_GNN(test_df, config, dir_path, device, test_by, graph_model, verbose=False):
+
+    trained_pth = f'{dir_path}/trained_model_{test_by}.pth'
+    trained_gnn_pth = f'{dir_path}/trained_model_gnn_{test_by}.pth'
+
+    single_neurons_per_layer = config['single_nn_arch']['neurons_per_layer']
+    single_layers = config['single_nn_arch']['layers']
+
+    dataset = MixtureDataset(test_df, set_type="test")
+    test_loader = DataLoader(dataset, batch_size=len(dataset), shuffle=False)
+
+    # Load the pre-trained sinlge element networks
+    model_Ar = Model(h1=single_neurons_per_layer, num_layers=single_layers, input_size=2)
+    model_O2 = Model(h1=single_neurons_per_layer, num_layers=single_layers, input_size=2)
+
+    #model_Ar.load_state_dict(torch.load('./Ar/baseline/trained_model.pth', weights_only=False))
+    #model_O2.load_state_dict(torch.load('./O2/baseline/trained_model.pth', weights_only=False))
+
+    # Make GNN model
+    model_gnn = MixtureGNN(graph_model=graph_model)
+
+    # Make wrapper mixture GNN model
+    trained_model = MixtureEtchModel(fnn_a=model_Ar, fnn_b=model_O2, gnn=model_gnn, device=device)
+    trained_model.load_state_dict(torch.load(trained_pth, weights_only=False))
+
+    criterion = WeightedMSE(reduction='mean', device=device)
+
+    test_loss, all_predictions, all_targets, r22, _ = test_model(model=trained_model,
+                                                                 test_loader=test_loader,
+                                                                 criterion=criterion,
+                                                                 device=device)
+    print(f"Mean test loss: {test_loss:.4f}")
+
+    input_columns = ['Power', 'Pressure', 'xAr']
+    output_columns_names = [col for col in test_df.columns if col not in input_columns]
+
+    predictions_df = pd.DataFrame(all_predictions, columns=output_columns_names)
+    predictions_df_csv = f'{dir_path}/pred_{test_by}.csv'
+    predictions_df.to_csv(predictions_df_csv, index=False, sep=';')
+
+    model_predictions = pd.read_csv(predictions_df_csv, sep=';')
+    real_targets = test_df[output_columns_names]
+
+    r2_scores = []
+    for col in range(model_predictions.shape[1]):
+        pred_col = model_predictions.iloc[:, col]
+        target_col = real_targets.iloc[:, col]
+
+        r2 = r2_score(target_col, pred_col)
+        r2_scores.append(r2)
+
+    plt.figure(figsize=(10.5, 7.5))
+    plt.bar(list(range(1, len(r2_scores) + 1)), r2_scores, color='skyblue', edgecolor='black')
+    plt.xlabel('Etching rate point')
+    plt.ylabel(r"$R^2$ Score")
+    plt.title(r"$R^2$ Scores")
+    plt.xticks(list(range(1, len(r2_scores) + 1)))
+    plt.tight_layout()
+    plt.tick_params(axis='both', which='major')
+    plt.savefig(f"{dir_path}/r2_{test_by}.png", dpi=600, bbox_inches='tight')
+    if verbose:
+        plt.show()
+
+    # Visualize distribution of residuals
+    residuals = abs(real_targets - model_predictions)/real_targets * 100
+    residuals_flatten = residuals.values.flatten()
+    plt.figure(figsize=(10.5, 7.5))
+    ax = sns.kdeplot(residuals, color='blue', fill=False)
+
+    # Remove "O" from legend labels
+    new_labels = [label.get_text().replace("O", "") for label in ax.get_legend().get_texts()]
+    ax.legend(new_labels)
+    plt.title('Histogram of Residuals')
+    plt.xlabel('(physics_based – NN)/physics_based %')
+    plt.ylabel('Frequency')
+    plt.xlim(-1, 100)    # Set the x-axis to extend to 15%
+    plt.tick_params(axis='both', which='major')
+    plt.savefig(f"{dir_path}/residuals_{test_by}.png", dpi=600, bbox_inches='tight')
+    if verbose:
+        plt.show()
+
 
 
 def test_mixture(test_df, gas, config, dir_path, device, test_by, verbose=False):
@@ -25,7 +108,7 @@ def test_mixture(test_df, gas, config, dir_path, device, test_by, verbose=False)
     test_loader = DataLoader(dataset, batch_size=len(dataset), shuffle=False)
 
     trained_model = Model(h1=neurons_per_layer, num_layers=layers, input_size=3, freeze_layers=[])
-    trained_model.load_state_dict(torch.load(trained_pth))
+    trained_model.load_state_dict(torch.load(trained_pth, weights_only=False))
 
     criterion = WeightedMSE(reduction='mean', device=device)
 

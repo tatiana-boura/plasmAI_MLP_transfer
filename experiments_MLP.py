@@ -7,7 +7,6 @@ from scripts.train import train_single, train_mixture
 from scripts.test import test_single, test_mixture
 
 device = setup_device()
-current_directory = os.path.dirname(os.path.realpath(__file__))
 
 seed_num = 41
 set_seed(seed_num)
@@ -39,8 +38,8 @@ if data_type == "single":
 elif data_type == "mixture":
 
     gas = 'mixture'
-    test_by = 'power'
-    # test_by = 'percentage'
+    # test_by = 'power'
+    test_by = 'percentage'
 
     dir_path = f'./{gas}'
     os.makedirs(dir_path, exist_ok=True)

@@ -1,19 +1,24 @@
 import torch
 import json
+import pickle
 from torch.utils.data import Dataset
 from sklearn.preprocessing import MinMaxScaler
 import joblib
 import pandas as pd
 
 class MixtureDataset(Dataset):
-    def __init__(self, df, set_type):
+    def __init__(self, df, set_type, gnn=False):
         
         input_cols = ['Power', 'Pressure', 'xAr']
         X = df[input_cols].to_numpy()
         Y = df[[col for col in df.columns if col not in input_cols]].to_numpy()
 
-        scaler_pth = "./data/scaler_mixture.pkl"
+        '''if gnn:
+                                    scaler_pth = './data/scaler_single.pkl'
+                                else:
+                                    scaler_pth = "./data/scaler_mixture.pkl"'''
 
+        scaler_pth = "./data/scaler_mixture.pkl"
         if set_type == "train":
             scaler = MinMaxScaler()
             X = scaler.fit_transform(X)

@@ -13,6 +13,11 @@ mixture:
   batch_size: 32 
   weight_decay: 2.0550345637540963e-05
 
+GNN:
+  lr: 0.0009620551638036177  
+  batch_size: 32 #32 
+  weight_decay: 2.0550345637540963e-05
+
 
 single_nn_arch:
   neurons_per_layer: 10
@@ -23,5 +28,5 @@ mixture_nn_arch:
   layers: 5
 
 training:
-  epochs: 2000
+  epochs: 2000 #2000
   patience: 70 #20
