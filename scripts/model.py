@@ -30,15 +30,15 @@ class Model(nn.Module):
                     param.requires_grad = False
 
     def forward(self, x):
-        #self.num_layers = 1
+        self.num_layers = 1
         for i in range(self.num_layers):
             x = F.elu(self.layers[i](x))  
-        x = self.out(x)  
+        #x = self.out(x)  
         return x
 
 
 class MixtureGNN(nn.Module):
-    def __init__(self, graph_model, node_input_dim=10, hidden_dim=32, output_dim=10):
+    def __init__(self, graph_model, node_input_dim=11, hidden_dim=64, output_dim=10):
         super().__init__()
 
         if graph_model == "SAGEConv":
@@ -51,14 +51,18 @@ class MixtureGNN(nn.Module):
             raise ValueError("Unknown GNN model.")
 
         self.conv1 = graph(node_input_dim, hidden_dim)
-        self.conv2 = graph(hidden_dim, hidden_dim)
+        self.conv2 = graph(hidden_dim, hidden_dim*2)
+        self.conv3 = graph(hidden_dim*2, hidden_dim*4)
+        self.conv4 = graph(hidden_dim*4, hidden_dim*2)
+        self.conv5 = graph(hidden_dim*2, hidden_dim)
         self.readout = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, x, edge_index, batch):
-        x = self.conv1(x, edge_index)
-        x = torch.relu(x)
-        x = self.conv2(x, edge_index)
-        x = torch.relu(x)
+        x = torch.relu(self.conv1(x, edge_index))
+        x = torch.relu(self.conv2(x, edge_index))
+        x = torch.relu(self.conv3(x, edge_index))
+        x = torch.relu(self.conv4(x, edge_index))
+        x = torch.relu(self.conv5(x, edge_index))
 
         graph_embedding = global_mean_pool(x, batch)  
 
@@ -87,8 +91,11 @@ class MixtureEtchModel(nn.Module):
         out_a = self.fnn_a(inputs)     
         out_b = self.fnn_b(inputs)     
 
-        node_a = (frac_a.unsqueeze(1) * out_a)        
-        node_b = ((1 - frac_a).unsqueeze(1) * out_b) 
+        '''node_a = (frac_a.unsqueeze(1) * out_a)        
+                                 node_b = ((1 - frac_a).unsqueeze(1) * out_b)''' 
+
+        node_a = torch.concatenate([out_a, frac_a.unsqueeze(1)], dim=1)        
+        node_b = torch.concatenate([out_b, (1 - frac_a).unsqueeze(1)], dim=1)       
 
         # Create node features for all 2-node graphs
         node_feats = torch.stack([node_a, node_b], dim=1)  
