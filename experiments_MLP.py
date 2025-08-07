@@ -38,8 +38,8 @@ if data_type == "single":
 elif data_type == "mixture":
 
     gas = 'mixture'
-    # test_by = 'power'
-    test_by = 'percentage'
+    test_by = 'power'
+    #test_by = 'percentage'
 
     dir_path = f'./{gas}'
     os.makedirs(dir_path, exist_ok=True)
@@ -51,10 +51,10 @@ elif data_type == "mixture":
         test_df = df[df['xAr'] < 0.3].copy()
         train_df = df[df['xAr'] >= 0.3].copy()
     else:
-        power_percentile = df["Power"].quantile(0.85)
-        pressure_percentile = df["Pressure"].quantile(0.85)
+        power_percentile = df["Power"].quantile(0.75)
+        pressure_percentile = df["Pressure"].quantile(0.75)
         test_df = df[(df['Power'] >= power_percentile) & (df['Pressure'] >= pressure_percentile)].copy()
-        train_df = df[(df['Power'] < power_percentile) & (df['Pressure'] < pressure_percentile)].copy()
+        train_df = df[(df['Power'] < power_percentile) | (df['Pressure'] < pressure_percentile)].copy()
 
     print(f"Mixture of gases.")
 
