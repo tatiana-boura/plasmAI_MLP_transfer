@@ -44,8 +44,18 @@ def train_GNN(train_df, config, dir_path, device, test_by, graph_model, verbose=
     model_Ar.load_state_dict(torch.load('./Ar/baseline/trained_model.pth', weights_only=False))
     model_O2.load_state_dict(torch.load('./O2/baseline/trained_model.pth', weights_only=False))
 
+    total = sum(p.numel() for p in model_Ar.parameters())
+    trainable = sum(p.numel() for p in model_Ar.parameters() if p.requires_grad)
+    print(f"Total parameters: {total*2}")
+    print(f"Trainable parameters: {trainable*2}")
+
     # Make GNN model
     model_gnn = MixtureGNN(graph_model=graph_model)
+
+    total = sum(p.numel() for p in model_gnn.parameters())
+    trainable = sum(p.numel() for p in model_gnn.parameters() if p.requires_grad)
+    print(f"Total parameters: {total}")
+    print(f"Trainable parameters: {trainable}")
 
     # Make wrapper mixture GNN model
     full_model = MixtureEtchModel(fnn_a=model_Ar, fnn_b=model_O2, gnn=model_gnn, device=device)
@@ -76,7 +86,7 @@ def train_GNN(train_df, config, dir_path, device, test_by, graph_model, verbose=
     model_save_path_gnn = f'{dir_path}/trained_model_gnn_{test_by}.pth'
     torch.save(trained_model.state_dict(), model_save_path)
     torch.save(trained_model.gnn.state_dict(), model_save_path_gnn)
-    
+
     print(f"model saved to {model_save_path}")
     print(f"time for training: {(end_time-start_time):.4f}")
 
@@ -117,6 +127,11 @@ def train_mixture(train_df, gas, config, dir_path, device, test_by, verbose=Fals
     val_loader = DataLoader(val_dataset, batch_size=batch, shuffle=False)
 
     model = Model(h1=neurons_per_layer, num_layers=layers, input_size=3)
+
+    total = sum(p.numel() for p in model.parameters())
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Total parameters: {total}")
+    print(f"Trainable parameters: {trainable}\n")
 
     criterion = WeightedMSE(reduction='mean', device=device)
 

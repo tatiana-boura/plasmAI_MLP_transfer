@@ -19,11 +19,11 @@ dir_path = f'./GNN'
 os.makedirs(dir_path, exist_ok=True)
 
 #graph_model='GATConv'
-#graph_model='SAGEConv'
-graph_model='GCNConv'
+graph_model='SAGEConv'
+#graph_model='GCNConv'
 
-test_by = "power"
-#test_by = "percentage"
+#test_by = "power"
+test_by = "percentage"
 df = pd.read_csv("./data/mixture_O2_Ar_dataset.csv", sep=';')
 
 print(df.shape)
