@@ -18,26 +18,22 @@ with open('./config.yaml', 'r') as f:
 dir_path = f'./GNN'
 os.makedirs(dir_path, exist_ok=True)
 
-#graph_model='GATConv'
-graph_model='SAGEConv'
-#graph_model='GCNConv'
+graph_model=config["GNN"]["arch"]
+test_by = config["mixture"]["test_type"]
 
-#test_by = "power"
-test_by = "percentage"
 df = pd.read_csv("./data/mixture_O2_Ar_dataset.csv", sep=';')
 
-print(df.shape)
 
 if test_by == "percentage":
     test_df = df[df['xAr'] < 0.3].copy()
     train_df = df[df['xAr'] >= 0.3].copy()
-    print(train_df.shape, test_df.shape)
-else:
+elif test_by == "power":
     power_percentile = df["Power"].quantile(0.75)
     pressure_percentile = df["Pressure"].quantile(0.75)
     test_df = df[(df['Power'] >= power_percentile) & (df['Pressure'] >= pressure_percentile)].copy()
     train_df = df[(df['Power'] < power_percentile) | (df['Pressure'] < pressure_percentile)].copy()
-    print(train_df.shape, test_df.shape)
+else:
+    raise ValueError("Uknown evaluation configuration.")
 
 print(f'\nTraining:\n')
 train_GNN(train_df=train_df, config=config, dir_path=dir_path, device=device, test_by=test_by, graph_model=graph_model, verbose=False)

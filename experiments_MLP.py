@@ -38,8 +38,7 @@ if data_type == "single":
 elif data_type == "mixture":
 
     gas = 'mixture'
-    test_by = 'power'
-    #test_by = 'percentage'
+    test_by = config[gas]["test_type"]
 
     dir_path = f'./{gas}'
     os.makedirs(dir_path, exist_ok=True)
@@ -50,11 +49,13 @@ elif data_type == "mixture":
     if test_by == "percentage":
         test_df = df[df['xAr'] < 0.3].copy()
         train_df = df[df['xAr'] >= 0.3].copy()
-    else:
+    elif test_by == "power":
         power_percentile = df["Power"].quantile(0.75)
         pressure_percentile = df["Pressure"].quantile(0.75)
         test_df = df[(df['Power'] >= power_percentile) & (df['Pressure'] >= pressure_percentile)].copy()
         train_df = df[(df['Power'] < power_percentile) | (df['Pressure'] < pressure_percentile)].copy()
+    else:
+        raise ValueError("Uknown evaluation configuration.")
 
     print(f"Mixture of gases.")
 
