@@ -19,8 +19,6 @@ GNN:
   batch_size: 32  
   weight_decay: 2.0550345637540963e-05
   arch: SAGEConv # GCNConv, GATConv
-  
-
 
 single_nn_arch:
   neurons_per_layer: 10
@@ -31,5 +29,5 @@ mixture_nn_arch:
   layers: 5
 
 training:
-  epochs: 2000 #2000
-  patience: 70 #20
+  epochs: 2000 
+  patience: 70 
