@@ -22,14 +22,13 @@ This branch contains the codebase for running experiments on mixtures of $Ar$ an
 ## Experiments execution pipeline:
   1. Download the requirements from `pyproject.toml` [cf. [poetry installation guide]].
   2. Prepare the configurations by adjusting the`config.yaml`:
-		  2.1.  In *`mixture > test_type`* choose the type of test set split from 
-		  (i) *percentage*, (ii) *power* [cf. Report]
-		  2.2. *If you wish to execute the GNN experiments*, then in *`GNN > arch`* choose the GNN architecture from 
-		  (i) *SAGEConv*, (ii) *GCNConv*, and (iii) *GATConv* [again, cf. Report]
-  3. Choose the experiment to run and execute it through poetry. For example, if you wish to run the GNN experiments, execute :
+> (2.1.)  In *`mixture > test_type`* choose the type of test set split from (i) *percentage*, (ii) *power* [cf. Report]
+
+> (2.2.) *If you wish to execute the GNN experiments*, then in *`GNN > arch`* choose the GNN architecture from (i) *SAGEConv*, (ii) *GCNConv*, and (iii) *GATConv* [again, cf. Report]
+  4. Choose the experiment to run and execute it through poetry. For example, if you wish to run the GNN experiments, execute :
 
 		    poetry run python experiments_GNN.py
-4. If you want to run the experiments that utilize only specific layers of the pre-trained single-element MLP, unfortunately, you have to comment as required the `forward()` method within the `Model` class in `scripts/model.py`. It is pretty straightforward, since there is not mix with the dimensions.
+5. If you want to run the experiments that utilize only specific layers of the pre-trained single-element MLP, unfortunately, you have to comment as required the `forward()` method within the `Model` class in `scripts/model.py`. It is pretty straightforward, since there is no mix-up with the dimensions.
 
 
 
