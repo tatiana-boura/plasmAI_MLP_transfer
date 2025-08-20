@@ -44,16 +44,19 @@ elif data_type == "mixture":
     os.makedirs(dir_path, exist_ok=True)
 
     # Load CSV
-    df = pd.read_csv("./data/mixture_O2_Ar_dataset.csv", sep=';')
+    df = pd.read_csv("./data/mixture_O2_Ar_dataset2.csv", sep=';')
+    print(df.shape)
 
     if test_by == "percentage":
-        test_df = df[df['xAr'] < 0.3].copy()
-        train_df = df[df['xAr'] >= 0.3].copy()
+        test_df = df[df['xAr'] < 0.2].copy()
+        train_df = df[df['xAr'] >= 0.2].copy()
+        print(train_df.shape, test_df.shape)
     elif test_by == "power":
         power_percentile = df["Power"].quantile(0.75)
         pressure_percentile = df["Pressure"].quantile(0.75)
         test_df = df[(df['Power'] >= power_percentile) & (df['Pressure'] >= pressure_percentile)].copy()
         train_df = df[(df['Power'] < power_percentile) | (df['Pressure'] < pressure_percentile)].copy()
+        print(train_df.shape, test_df.shape)
     else:
         raise ValueError("Uknown evaluation configuration.")
 

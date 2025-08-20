@@ -21,12 +21,12 @@ os.makedirs(dir_path, exist_ok=True)
 graph_model=config["GNN"]["arch"]
 test_by = config["mixture"]["test_type"]
 
-df = pd.read_csv("./data/mixture_O2_Ar_dataset.csv", sep=';')
+df = pd.read_csv("./data/mixture_O2_Ar_dataset2.csv", sep=';')
 
 
 if test_by == "percentage":
-    test_df = df[df['xAr'] < 0.3].copy()
-    train_df = df[df['xAr'] >= 0.3].copy()
+    test_df = df[df['xAr'] < 0.2].copy()
+    train_df = df[df['xAr'] >= 0.2].copy()
 elif test_by == "power":
     power_percentile = df["Power"].quantile(0.75)
     pressure_percentile = df["Pressure"].quantile(0.75)

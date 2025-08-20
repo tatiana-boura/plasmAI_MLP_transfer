@@ -12,13 +12,13 @@ mixture:
   lr: 0.0009620551638036177  
   batch_size: 32 
   weight_decay: 2.0550345637540963e-05
-  test_type: percentage # power
+  test_type: power # power, percentage
 
 GNN:
   lr: 0.001 
   batch_size: 32  
   weight_decay: 2.0550345637540963e-05
-  arch: SAGEConv # GCNConv, GATConv
+  arch: SAGEConv # GCNConv, GATConv, SAGEConv
 
 single_nn_arch:
   neurons_per_layer: 10
