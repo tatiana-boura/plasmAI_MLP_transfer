@@ -16,11 +16,11 @@ with open('./config.yaml', 'r') as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 
 
-data_type = "mixture"
+data_type = "single"
 
 if data_type == "single":
 
-    gas = 'O2'
+    gas = 'Ar'
     training_type = 'baseline'  # baseline, fine_tune, freeze
     stats_json = './data/stats_min_max.json'
 
@@ -62,10 +62,10 @@ elif data_type == "mixture":
 
     print(f"Mixture of gases.")
 
-    print(f'\nTraining:\n')
-    train_mixture(train_df=train_df, gas=gas, config=config, dir_path=dir_path, device=device, test_by=test_by, verbose=False)
-    print(f'\nEvaluation:\n')
-    test_mixture(test_df=test_df, gas=gas, config=config, dir_path=dir_path, device=device, test_by=test_by, verbose=False)
+    '''print(f'\nTraining:\n')
+                train_mixture(train_df=train_df, gas=gas, config=config, dir_path=dir_path, device=device, test_by=test_by, verbose=False)
+                print(f'\nEvaluation:\n')
+                test_mixture(test_df=test_df, gas=gas, config=config, dir_path=dir_path, device=device, test_by=test_by, verbose=False)'''
     
 
 else:
